@@ -1,0 +1,16 @@
+{{- if .Values.aladin.imageVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "aladin.fullname" $ }}-images
+spec:
+  accessModes:
+    - {{ .Values.aladin.imageVolume.accessModes }}
+{{- if .Values.aladin.imageVolume.storageClassName }}
+  storageClassName: {{ .Values.aladin.imageVolume.storageClassName }}
+{{- end }}          
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: {{ .Values.aladin.imageVolume.size }}
+{{- end }}
