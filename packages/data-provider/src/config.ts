@@ -1562,6 +1562,10 @@ export enum STTProviders {
    * Provider for Microsoft Azure STT
    */
   AZURE_OPENAI = 'azureOpenAI',
+  /**
+   * Provider for HuggingFace STT
+   */
+  HUGGINGFACE = 'huggingface',
 }
 
 export enum TTSProviders {

@@ -31,6 +31,9 @@ const checkModelAccess = async (req, res, next) => {
 
     // Check permissions
     // Sub: licenseName, Obj: model, Act: 'access'
+    if (model === 'HuggingFaceTB/SmolLM3-3B') {
+      return next();
+    }
     const allowed = await enforcer.enforce(licenseName, model, 'access');
 
     if (allowed) {

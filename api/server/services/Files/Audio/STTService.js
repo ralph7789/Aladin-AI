@@ -6,6 +6,8 @@ const { logger } = require('@aladin/data-schemas');
 const { genAzureEndpoint } = require('@aladin/api');
 const { extractEnvVariable, STTProviders } = require('aladin-data-provider');
 const { getAppConfig } = require('~/server/services/Config');
+// Add import for InferenceClient - though not used directly here, useful for reference and if a dedicated client was needed.
+// const { InferenceClient } = require('@huggingface/inference');
 
 /**
  * Maps MIME types to their corresponding file extensions for audio files.
@@ -88,6 +90,7 @@ class STTService {
     this.providerStrategies = {
       [STTProviders.OPENAI]: this.openAIProvider,
       [STTProviders.AZURE_OPENAI]: this.azureOpenAIProvider,
+      [STTProviders.HUGGINGFACE]: this.huggingfaceProvider,
     };
   }
 
@@ -236,6 +239,30 @@ class STTService {
   }
 
   /**
+   * Prepares the request for the Hugging Face STT provider.
+   * @param {Object} sttSchema - The STT schema for Hugging Face.
+   * @param {Buffer} audioBuffer - The audio data to be transcribed.
+   * @param {Object} audioFile - The audio file object containing originalname, mimetype, and size.
+   * @returns {Array} An array containing the URL, data, and headers for the request.
+   */
+  huggingfaceProvider(sttSchema, audioBuffer, audioFile) {
+    const url = sttSchema?.url || `https://router.huggingface.co/models/${sttSchema.model}`;
+    const apiKey = extractEnvVariable(sttSchema.apiKey) || '';
+
+    const headers = {
+      'Content-Type': audioFile.mimetype, // Use the correct MIME type for the audio
+      ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
+    };
+
+    // The data is the raw audio buffer
+    const data = audioBuffer;
+
+    [headers].forEach(this.removeUndefined);
+
+    return [url, data, headers];
+  }
+
+  /**
    * Sends an STT request to the specified provider.
    * @async
    * @param {string} provider - The STT provider to use.
@@ -253,15 +280,21 @@ class STTService {
       throw new Error('Invalid provider');
     }
 
+    // `audioReadStream` is only needed for OpenAI provider for FormData.
+    // HuggingFace & Azure will directly use `audioBuffer`.
     const fileExtension = getFileExtensionFromMime(audioFile.mimetype);
+    let audioDataForProvider = audioBuffer;
 
-    const audioReadStream = Readable.from(audioBuffer);
-    audioReadStream.path = `audio.${fileExtension}`;
+    if (provider === STTProviders.OPENAI) {
+      const audioReadStream = Readable.from(audioBuffer);
+      audioReadStream.path = `audio.${fileExtension}`; // For FormData to correctly identify the file type
+      audioDataForProvider = audioReadStream;
+    }
 
     const [url, data, headers] = strategy.call(
       this,
       sttSchema,
-      audioReadStream,
+      audioDataForProvider, // Pass either audioBuffer or audioReadStream
       audioFile,
       language,
     );
