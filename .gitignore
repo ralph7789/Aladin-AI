@@ -67,7 +67,6 @@ bower_components/
 .flooignore
 
 #config file
-aladin.yaml
 aladin.yml
 
 # Environment

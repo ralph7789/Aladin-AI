@@ -9,6 +9,9 @@ services:
     depends_on:
       - mongodb
       - rag_api
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: aladin-api
     restart: always
     user: "${UID}:${GID}"
@@ -24,6 +27,7 @@ services:
       - type: bind
         source: ./.env
         target: /app/.env
+      - ./aladin.yaml:/app/aladin.yaml
       - ./images:/app/client/public/images
       - ./uploads:/app/uploads
       - ./logs:/app/logs
