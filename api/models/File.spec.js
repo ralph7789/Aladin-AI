@@ -2,12 +2,7 @@ const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const { createModels } = require('@aladin/data-schemas');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const {
-  SystemRoles,
-  ResourceType,
-  AccessRoleIds,
-  PrincipalType,
-} = require('aladin-data-provider');
+const { SystemRoles, ResourceType, AccessRoleIds, PrincipalType } = require('aladin-data-provider');
 const { grantPermission } = require('~/server/services/PermissionService');
 const { getFiles, createFile } = require('./File');
 const { seedDefaultRoles } = require('~/models');

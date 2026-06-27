@@ -358,8 +358,27 @@ const chatV2 = async (req, res) => {
         await cache.set(cacheKey, `${thread_id}:${run_id}`, Time.TEN_MINUTES);
         sendInitialResponse();
 
-        // todo: retry logic
-        response = await runAssistant({ openai, thread_id, run_id });
+        const maxRetries = 3;
+        let retryCount = 0;
+        const executeRun = async () => {
+          try {
+            response = await runAssistant({ openai, thread_id, run_id });
+          } catch (error) {
+            if (retryCount < maxRetries) {
+              retryCount++;
+              const delay = Math.pow(2, retryCount) * 1000;
+              logger.error(
+                `[chatV2] Error running assistant, retrying in ${delay}ms (Attempt ${retryCount}/${maxRetries}):`,
+                error,
+              );
+              await new Promise((resolve) => setTimeout(resolve, delay));
+              return await executeRun();
+            }
+            throw error;
+          }
+        };
+
+        await executeRun();
         return;
       }
 

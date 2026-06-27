@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+langchain
+langchain-openai
+langchain-community
+langchain-postgres
+psycopg[binary]
+sentence-transformers
+pypdf

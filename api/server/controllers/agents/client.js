@@ -80,6 +80,25 @@ const payloadParser = ({ req, agent, endpoint }) => {
   return req.body.endpointOption.model_parameters;
 };
 
+/**
+ * Sanitizes options by removing potentially sensitive data.
+ * @param {Record<string, any>} options
+ * @returns {Record<string, any>}
+ */
+const sanitizeOptions = (options) => {
+  if (!options || typeof options !== 'object') {
+    return options;
+  }
+  const sensitiveKeys = ['apiKey', 'api_key', 'bearer', 'token', 'secret', 'password', 'auth'];
+  const sanitized = { ...options };
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some((sk) => key.toLowerCase().includes(sk))) {
+      delete sanitized[key];
+    }
+  }
+  return sanitized;
+};
+
 function createTokenCounter(encoding) {
   return function (message) {
     const countTokens = (text) => Tokenizer.getTokenCount(text, encoding);
@@ -247,8 +266,7 @@ class AgentClient extends BaseClient {
           spec: this.options.spec,
           iconURL: this.options.iconURL,
         },
-        // TODO: PARSE OPTIONS BY PROVIDER, MAY CONTAIN SENSITIVE DATA
-        runOptions,
+        sanitizeOptions(runOptions),
       ),
     );
   }

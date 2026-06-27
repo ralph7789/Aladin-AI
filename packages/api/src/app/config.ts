@@ -1,9 +1,5 @@
 import { logger } from '@aladin/data-schemas';
-import {
-  EModelEndpoint,
-  removeNullishValues,
-  normalizeEndpointName,
-} from 'aladin-data-provider';
+import { EModelEndpoint, removeNullishValues, normalizeEndpointName } from 'aladin-data-provider';
 import type { TCustomConfig, TEndpoint, TTransactionsConfig } from 'aladin-data-provider';
 import type { AppConfig } from '@aladin/data-schemas';
 import { isEnabled } from '~/utils';

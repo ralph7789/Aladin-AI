@@ -60,81 +60,91 @@ async function connectDb() {
   // 1. If we have a configured URI and haven't fallen back yet, try it.
   if (MONGO_URI && !localMongo) {
     try {
-       console.log('Attempting to connect to configured MONGO_URI...');
-       cached.promise = mongoose.connect(MONGO_URI, opts);
-       cached.conn = await cached.promise;
-       return cached.conn;
+      console.log('Attempting to connect to configured MONGO_URI...');
+      cached.promise = mongoose.connect(MONGO_URI, opts);
+      cached.conn = await cached.promise;
+      return cached.conn;
     } catch (err) {
-       console.error('Failed to connect to configured MONGO_URI:', err.message);
-       console.log('Switching to local fallback...');
-       // Reset state
-       cached.promise = null;
-       cached.conn = null;
-       try { 
-         await mongoose.disconnect(); 
-         if (mongoose.connection) {
-            await mongoose.connection.close();
-         }
-       } catch (e) { /* ignore */ }
+      console.error('Failed to connect to configured MONGO_URI:', err.message);
+      console.log('Switching to local fallback...');
+      // Reset state
+      cached.promise = null;
+      cached.conn = null;
+      try {
+        await mongoose.disconnect();
+        if (mongoose.connection) {
+          await mongoose.connection.close();
+        }
+      } catch (e) {
+        /* ignore */
+      }
     }
   }
 
   // 2. Initialize Fallback if needed (either no URI originally, or previous attempt failed)
   if (!localMongo) {
-      try {
-        const { MongoMemoryServer } = require('mongodb-memory-server');
-        const path = require('path');
-        const fs = require('fs');
-        
-        const dbPath = path.join(__dirname, '..', 'data', 'mongodb');
-        if (!fs.existsSync(dbPath)) {
-            fs.mkdirSync(dbPath, { recursive: true });
-        }
+    try {
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const path = require('path');
+      const fs = require('fs');
 
-        logger.info('Initializing local embedded MongoDB (fallback)...');
-        
-        // Add local libs to LD_LIBRARY_PATH for legacy OpenSSL support
-        const libsDir = path.resolve(__dirname, '..', 'data', 'libs');
-        process.env.LD_LIBRARY_PATH = `${libsDir}:${process.env.LD_LIBRARY_PATH || ''}`;
-
-        localMongo = await MongoMemoryServer.create({
-            instance: {
-                dbPath: dbPath,
-            },
-            binary: {
-                version: '4.4.18'
-            }
-        });
-        MONGO_URI = localMongo.getUri();
-        // Critical: Update process.env.MONGO_URI so other modules (like Casbin) use the fallback URI
-        process.env.MONGO_URI = MONGO_URI;
-        logger.info(`Local MongoDB started at ${MONGO_URI}`);
-      } catch (err) {
-        logger.error('Failed to start local MongoDB fallback', err);
-        throw new Error('Please define the MONGO_URI environment variable or ensure mongodb-memory-server can run.');
+      const dbPath = path.join(__dirname, '..', 'data', 'mongodb');
+      if (!fs.existsSync(dbPath)) {
+        fs.mkdirSync(dbPath, { recursive: true });
       }
+
+      logger.info('Initializing local embedded MongoDB (fallback)...');
+
+      // Add local libs to LD_LIBRARY_PATH for legacy OpenSSL support
+      const libsDir = path.resolve(__dirname, '..', 'data', 'libs');
+      process.env.LD_LIBRARY_PATH = `${libsDir}:${process.env.LD_LIBRARY_PATH || ''}`;
+
+      localMongo = await MongoMemoryServer.create({
+        instance: {
+          dbPath: dbPath,
+        },
+        binary: {
+          version: '4.4.18',
+        },
+      });
+      MONGO_URI = localMongo.getUri();
+      // Critical: Update process.env.MONGO_URI so other modules (like Casbin) use the fallback URI
+      process.env.MONGO_URI = MONGO_URI;
+      logger.info(`Local MongoDB started at ${MONGO_URI}`);
+    } catch (err) {
+      logger.error('Failed to start local MongoDB fallback', err);
+      throw new Error(
+        'Please define the MONGO_URI environment variable or ensure mongodb-memory-server can run.',
+      );
+    }
   }
 
   // 3. Connect to the (now guaranteed valid) URI (either original or local)
   if (!cached.conn || cached.conn._readyState !== 1) {
-      // Double check if mongoose is already connected to something else to prevent "openUri" error
-      // Force wait for disconnection
-      if (mongoose.connection.readyState !== 0) {
-          try { await mongoose.disconnect(); } catch (e) { console.error('Disconnect error:', e); }
-          
-          let retries = 0;
-          while (mongoose.connection.readyState !== 0 && retries < 20) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-              retries++;
-          }
-          if (mongoose.connection.readyState !== 0) {
-             console.error('Mongoose failed to disconnect fully. Attempting to force close...');
-             try { await mongoose.connection.close(); } catch(e) {}
-          }
+    // Double check if mongoose is already connected to something else to prevent "openUri" error
+    // Force wait for disconnection
+    if (mongoose.connection.readyState !== 0) {
+      try {
+        await mongoose.disconnect();
+      } catch (e) {
+        console.error('Disconnect error:', e);
       }
-      
-      cached.promise = mongoose.connect(MONGO_URI, opts);
-      cached.conn = await cached.promise;
+
+      let retries = 0;
+      while (mongoose.connection.readyState !== 0 && retries < 20) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        retries++;
+      }
+      if (mongoose.connection.readyState !== 0) {
+        console.error('Mongoose failed to disconnect fully. Attempting to force close...');
+        try {
+          await mongoose.connection.close();
+        } catch (e) {}
+      }
+    }
+
+    cached.promise = mongoose.connect(MONGO_URI, opts);
+    cached.conn = await cached.promise;
   }
 
   return cached.conn;

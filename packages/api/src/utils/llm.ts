@@ -16,9 +16,7 @@ type AladinParams = {
  * Separates Aladin-specific parameters from model options
  * @param options - The combined options object
  */
-export function extractAladinParams(
-  options?: DynamicSettingProps['conversation'],
-): AladinParams {
+export function extractAladinParams(options?: DynamicSettingProps['conversation']): AladinParams {
   if (!options) {
     return {
       modelOptions: {} as Omit<NonNullable<DynamicSettingProps['conversation']>, AladinKeys>,

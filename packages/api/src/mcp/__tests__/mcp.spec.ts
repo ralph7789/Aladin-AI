@@ -1,8 +1,4 @@
-import {
-  MCPOptions,
-  StdioOptionsSchema,
-  StreamableHTTPOptionsSchema,
-} from 'aladin-data-provider';
+import { MCPOptions, StdioOptionsSchema, StreamableHTTPOptionsSchema } from 'aladin-data-provider';
 import type { TUser } from 'aladin-data-provider';
 import { processMCPEnv } from '~/utils/env';
 

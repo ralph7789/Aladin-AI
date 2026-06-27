@@ -1,10 +1,6 @@
 const { getModelMaxTokens } = require('@aladin/api');
 const { createContentAggregator } = require('@aladin/agents');
-const {
-  EModelEndpoint,
-  providerEndpointMap,
-  getResponseSender,
-} = require('aladin-data-provider');
+const { EModelEndpoint, providerEndpointMap, getResponseSender } = require('aladin-data-provider');
 const { getDefaultHandlers } = require('~/server/controllers/agents/callbacks');
 const getOptions = require('~/server/services/Endpoints/bedrock/options');
 const AgentClient = require('~/server/controllers/agents/client');

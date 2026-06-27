@@ -31,7 +31,7 @@ const checkModelAccess = async (req, res, next) => {
 
     // Check permissions
     // Sub: licenseName, Obj: model, Act: 'access'
-    if (model === 'HuggingFaceTB/SmolLM3-3B') {
+    if (model === 'meta-llama/Llama-3.1-8B-Instruct' || model === 'moonshotai/kimi-k2:free') {
       return next();
     }
     const allowed = await enforcer.enforce(licenseName, model, 'access');
@@ -39,12 +39,15 @@ const checkModelAccess = async (req, res, next) => {
     if (allowed) {
       return next();
     }
-    
-    // Log denial for debugging
-    console.warn(`Access denied for User ${req.user.id} (License: ${licenseName}) to Model ${model}`);
-    
-    return res.status(403).json({ error: `Access denied for model: ${model} with license ${licenseName}` });
 
+    // Log denial for debugging
+    console.warn(
+      `Access denied for User ${req.user.id} (License: ${licenseName}) to Model ${model}`,
+    );
+
+    return res
+      .status(403)
+      .json({ error: `Access denied for model: ${model} with license ${licenseName}` });
   } catch (err) {
     console.error('Casbin Middleware Error:', err);
     return res.status(500).json({ error: 'Internal Server Error during permission check' });

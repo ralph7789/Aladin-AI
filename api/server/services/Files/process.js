@@ -38,6 +38,44 @@ const { determineFileType } = require('~/server/utils');
 const { STTService } = require('./Audio/STTService');
 
 /**
+ * Calculate the token cost for an image based on its dimensions and detail level.
+ * Follows OpenAI's vision token counting logic.
+ *
+ * @param {Object} params - The parameters object.
+ * @param {number} [params.width] - The width of the image.
+ * @param {number} [params.height] - The height of the image.
+ * @param {string} [params.detail] - The detail level ('low', 'high', 'auto').
+ * @returns {number} The calculated token cost.
+ */
+const calculateImageTokenCost = ({ width, height, detail = 'auto' }) => {
+  if (detail === 'low') {
+    return 85;
+  }
+
+  if (!width || !height) {
+    return 0;
+  }
+
+  // High detail: Resize to fit within 2048x2048, then scale shortest side to 768px
+  let resizedWidth = width;
+  let resizedHeight = height;
+
+  if (resizedWidth > 2048 || resizedHeight > 2048) {
+    const ratio = 2048 / Math.max(resizedWidth, resizedHeight);
+    resizedWidth *= ratio;
+    resizedHeight *= ratio;
+  }
+
+  const scale = 768 / Math.min(resizedWidth, resizedHeight);
+  resizedWidth *= scale;
+  resizedHeight *= scale;
+
+  // Count 512px squares
+  const numSquares = Math.ceil(resizedWidth / 512) * Math.ceil(resizedHeight / 512);
+  return numSquares * 170 + 85;
+};
+
+/**
  * Creates a modular file upload wrapper that ensures filename sanitization
  * across all storage strategies. This prevents storage-specific implementations
  * from having to handle sanitization individually.
@@ -109,8 +147,9 @@ const processFiles = async (files, fileIds) => {
  * @param {Promise[]} params.promises - The array of promises to await.
  * @param {string[]} params.resolvedFileIds - The array of promises to await.
  * @param {OpenAI | undefined} [params.openai] - If an OpenAI file, the initialized OpenAI client.
+ * @param {string | undefined} [params.apiKey] - If a Google file, the Google API key.
  */
-function enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai }) {
+function enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai, apiKey }) {
   if (checkOpenAIStorage(file.source)) {
     // Enqueue to leaky bucket
     promises.push(
@@ -133,7 +172,7 @@ function enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileI
   } else {
     // Add directly to promises
     promises.push(
-      deleteFile(req, file)
+      deleteFile(req, file, apiKey)
         .then(() => resolvedFileIds.push(file.file_id))
         .catch((err) => {
           logger.error('Error deleting file', err);
@@ -163,6 +202,17 @@ const processDeleteRequest = async ({ req, files }) => {
   const resolvedFileIds = [];
   const deletionMethods = {};
   const promises = [];
+
+  let googleApiKey;
+  const initializeGoogle = async () => {
+    if (googleApiKey) {
+      return;
+    }
+    const { loadAuthValues } = require('~/server/services/Tools/credentials');
+    const { AuthKeys } = require('aladin-data-provider');
+    const result = await loadAuthValues({ userId: req.user.id, authFields: [AuthKeys.GOOGLE_API_KEY] });
+    googleApiKey = result[AuthKeys.GOOGLE_API_KEY];
+  };
 
   /** @type {Record<string, OpenAI | undefined>} */
   const client = { [FileSources.openai]: undefined, [FileSources.azure]: undefined };
@@ -210,6 +260,10 @@ const processDeleteRequest = async ({ req, files }) => {
       await initializeClients();
     }
 
+    if (source === FileSources.google && !googleApiKey) {
+      await initializeGoogle();
+    }
+
     const openai = client[source];
 
     if (req.body.assistant_id && req.body.tool_resource) {
@@ -234,6 +288,7 @@ const processDeleteRequest = async ({ req, files }) => {
         promises,
         resolvedFileIds,
         openai,
+        apiKey: googleApiKey,
       });
       continue;
     }
@@ -244,7 +299,7 @@ const processDeleteRequest = async ({ req, files }) => {
     }
 
     deletionMethods[source] = deleteFile;
-    enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai });
+    enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai, apiKey: googleApiKey });
   }
 
   if (agentFiles.length > 0) {
@@ -325,7 +380,7 @@ const processImageFile = async ({ req, res, metadata, returnFile = false }) => {
   const { file } = req;
   const appConfig = req.config;
   const source = getFileStrategy(appConfig, { isImage: true });
-  const { handleImageUpload } = getStrategyFunctions(source);
+  const { handleImageUpload, deleteFile } = getStrategyFunctions(source);
   const { file_id, temp_file_id, endpoint } = metadata;
 
   const { filepath, bytes, width, height } = await handleImageUpload({
@@ -335,27 +390,48 @@ const processImageFile = async ({ req, res, metadata, returnFile = false }) => {
     endpoint,
   });
 
-  const result = await createFile(
-    {
-      user: req.user.id,
-      file_id,
-      temp_file_id,
-      bytes,
-      filepath,
-      filename: file.originalname,
-      context: FileContext.message_attachment,
-      source,
-      type: `image/${appConfig.imageOutputType}`,
-      width,
-      height,
-    },
-    true,
-  );
+  try {
+    const usage_metadata = {
+      total_tokens: calculateImageTokenCost({
+        width,
+        height,
+        detail: metadata.imageDetail ?? appConfig.imageDetail,
+      }),
+    };
 
-  if (returnFile) {
-    return result;
+    const result = await createFile(
+      {
+        user: req.user.id,
+        file_id,
+        temp_file_id,
+        bytes,
+        filepath,
+        filename: file.originalname,
+        context: FileContext.message_attachment,
+        source,
+        type: `image/${appConfig.imageOutputType}`,
+        width,
+        height,
+        usage_metadata,
+      },
+      true,
+    );
+
+    if (returnFile) {
+      return result;
+    }
+    res.status(200).json({ message: 'File uploaded and processed successfully', ...result });
+  } catch (error) {
+    logger.error('[processImageFile] Error saving file to DB, attempting cleanup:', error);
+    try {
+      if (deleteFile) {
+        await deleteFile(req, { file_id, filepath, source });
+      }
+    } catch (cleanupError) {
+      logger.error('[processImageFile] Cleanup failed:', cleanupError);
+    }
+    throw error;
   }
-  res.status(200).json({ message: 'File uploaded and processed successfully', ...result });
 };
 
 /**
@@ -387,6 +463,15 @@ const uploadImageBuffer = async ({ req, context, metadata = {}, resize = true })
   }
   const fileName = `${file_id}-${filename}`;
   const filepath = await saveBuffer({ userId: req.user.id, fileName, buffer });
+
+  const usage_metadata = {
+    total_tokens: calculateImageTokenCost({
+      width,
+      height,
+      detail: metadata.imageDetail ?? appConfig.imageDetail,
+    }),
+  };
+
   return await createFile(
     {
       user: req.user.id,
@@ -399,6 +484,7 @@ const uploadImageBuffer = async ({ req, context, metadata = {}, resize = true })
       type,
       width,
       height,
+      usage_metadata,
     },
     true,
   );
@@ -417,11 +503,13 @@ const uploadImageBuffer = async ({ req, context, metadata = {}, resize = true })
  */
 const processFileUpload = async ({ req, res, metadata }) => {
   const appConfig = req.config;
+  const { file } = req;
   const isAssistantUpload = isAssistantsEndpoint(metadata.endpoint);
   const assistantSource =
     metadata.endpoint === EModelEndpoint.azureAssistants ? FileSources.azure : FileSources.openai;
+  const isGoogleUpload = metadata.endpoint === EModelEndpoint.google && !file.mimetype.startsWith('image');
   // Use the configured file strategy for regular file uploads (not vectordb)
-  const source = isAssistantUpload ? assistantSource : appConfig.fileStrategy;
+  const source = isAssistantUpload ? assistantSource : (isGoogleUpload ? FileSources.google : appConfig.fileStrategy);
   const { handleFileUpload } = getStrategyFunctions(source);
   const { file_id, temp_file_id = null } = metadata;
 
@@ -431,7 +519,14 @@ const processFileUpload = async ({ req, res, metadata }) => {
     ({ openai } = await getOpenAIClient({ req }));
   }
 
-  const { file } = req;
+  let googleApiKey;
+  if (source === FileSources.google) {
+    const { loadAuthValues } = require('~/server/services/Tools/credentials');
+    const { AuthKeys } = require('aladin-data-provider');
+    const result = await loadAuthValues({ userId: req.user.id, authFields: [AuthKeys.GOOGLE_API_KEY] });
+    googleApiKey = result[AuthKeys.GOOGLE_API_KEY];
+  }
+
   const sanitizedUploadFn = createSanitizedUploadWrapper(handleFileUpload);
   const {
     id,
@@ -446,6 +541,7 @@ const processFileUpload = async ({ req, res, metadata }) => {
     file,
     file_id,
     openai,
+    apiKey: googleApiKey,
   });
 
   if (isAssistantUpload && !metadata.message_file && !metadata.tool_resource) {

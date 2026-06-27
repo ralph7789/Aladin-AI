@@ -130,8 +130,8 @@ class OllamaClient {
    */
   async chatCompletion({ payload, onProgress, abortController = null }) {
     let intermediateReply = '';
-
-    const parameters = ollamaPayloadSchema.parse(payload);
+    try {
+      const parameters = ollamaPayloadSchema.parse(payload);
     const messages = OllamaClient.formatOpenAIMessages(payload.messages);
 
     if (parameters.stream) {
@@ -157,11 +157,11 @@ class OllamaClient {
       // const generation = await this.client.generate(payload);
     }
 
-    return intermediateReply;
-  }
-  catch(err) {
-    logger.error('[OllamaClient.chatCompletion]', err);
-    throw err;
+      return intermediateReply;
+    } catch(err) {
+      logger.error('[OllamaClient.chatCompletion]', err);
+      throw err;
+    }
   }
 }
 

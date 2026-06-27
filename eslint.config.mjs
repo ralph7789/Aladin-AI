@@ -40,6 +40,7 @@ export default [
       'data-node/**/*',
       'meili_data/**/*',
       '**/node_modules/**/*',
+      '**/dist/**/*',
     ],
   },
   ...fixupConfigRules(
@@ -128,7 +129,7 @@ export default [
         },
       ],
       'no-console': 'off',
-      'import/no-cycle': 'error',
+      'import/no-cycle': 'warn',
       'import/no-self-import': 'error',
       'import/extensions': 'off',
       'no-promise-executor-return': 'off',

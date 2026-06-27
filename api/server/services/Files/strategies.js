@@ -49,6 +49,7 @@ const {
   processAzureAvatar,
 } = require('./Azure');
 const { uploadOpenAIFile, deleteOpenAIFile, getOpenAIFileStream } = require('./OpenAI');
+const { uploadGoogleFile, deleteGoogleFile } = require('./Google');
 const { getCodeOutputDownloadStream, uploadCodeEnvFile } = require('./Code');
 const { uploadVectors, deleteVectors } = require('./VectorDB');
 
@@ -246,6 +247,28 @@ const vertexMistralOCRStrategy = () => ({
   handleFileUpload: uploadGoogleVertexMistralOCR,
 });
 
+/**
+ * Google File API Strategy Functions
+ * */
+const googleStrategy = () => ({
+  handleFileUpload: uploadGoogleFile,
+  deleteFile: deleteGoogleFile,
+  /** @type {typeof saveFileFromURL | null} */
+  saveURL: null,
+  /** @type {typeof getLocalFileURL | null} */
+  getFileURL: null,
+  /** @type {typeof saveLocalBuffer | null} */
+  saveBuffer: null,
+  /** @type {typeof processLocalAvatar | null} */
+  processAvatar: null,
+  /** @type {typeof uploadLocalImage | null} */
+  handleImageUpload: null,
+  /** @type {typeof prepareImagesLocal | null} */
+  prepareImagePayload: null,
+  /** @type {typeof getLocalFileStream | null} */
+  getDownloadStream: null,
+});
+
 // Strategy Selector
 const getStrategyFunctions = (fileSource) => {
   if (fileSource === FileSources.firebase) {
@@ -272,6 +295,8 @@ const getStrategyFunctions = (fileSource) => {
     return vertexMistralOCRStrategy();
   } else if (fileSource === FileSources.text) {
     return localStrategy(); // Text files use local strategy
+  } else if (fileSource === FileSources.google) {
+    return googleStrategy();
   } else {
     throw new Error(
       `Invalid file source: ${fileSource}. Available sources: ${Object.values(FileSources).join(', ')}`,

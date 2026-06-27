@@ -45,6 +45,8 @@ export interface ReadFileOptions {
   highWaterMark?: number;
   /** File size in bytes if known (e.g. from multer). Avoids extra stat() call. */
   fileSize?: number;
+  /** If true, will not throw error on large files even if they exceed memory limits (use with caution) */
+  forceStream?: boolean;
 }
 
 /**
@@ -53,6 +55,30 @@ export interface ReadFileOptions {
 export interface ReadFileResult<T> {
   content: T;
   bytes: number;
+}
+
+/**
+ * Streams a file and applies a callback to each chunk.
+ * Recommended for very large files to avoid memory issues.
+ */
+export async function streamFile(
+  filePath: string,
+  onChunk: (chunk: string | Buffer) => void | Promise<void>,
+  options: ReadFileOptions = {},
+): Promise<number> {
+  const { encoding, highWaterMark = 64 * 1024, fileSize } = options;
+
+  const bytes = fileSize ?? (await stat(filePath)).size;
+  const stream = createReadStream(filePath, {
+    encoding,
+    highWaterMark,
+  });
+
+  for await (const chunk of stream) {
+    await onChunk(chunk as string | Buffer);
+  }
+
+  return bytes;
 }
 
 /**
@@ -72,22 +98,29 @@ export async function readFileAsString(
     streamThreshold = 10 * 1024 * 1024, // 10MB
     highWaterMark = 64 * 1024, // 64KB
     fileSize,
+    forceStream = false,
   } = options;
 
   // Get file size if not provided
   const bytes = fileSize ?? (await stat(filePath)).size;
 
+  // For very large files (> 100MB), discourage using this function unless forced
+  if (bytes > 100 * 1024 * 1024 && !forceStream) {
+    throw new Error(
+      `File size (${(bytes / (1024 * 1024)).toFixed(2)} MB) is too large for readFileAsString. Use streamFile instead.`,
+    );
+  }
+
   // For large files, use streaming to avoid memory issues
   if (bytes > streamThreshold) {
     const chunks: string[] = [];
-    const stream = createReadStream(filePath, {
-      encoding,
-      highWaterMark,
-    });
-
-    for await (const chunk of stream) {
-      chunks.push(chunk as string);
-    }
+    await streamFile(
+      filePath,
+      (chunk) => {
+        chunks.push(chunk as string);
+      },
+      { encoding, highWaterMark, fileSize: bytes },
+    );
 
     return { content: chunks.join(''), bytes };
   }
@@ -113,21 +146,29 @@ export async function readFileAsBuffer(
     streamThreshold = 10 * 1024 * 1024, // 10MB
     highWaterMark = 64 * 1024, // 64KB
     fileSize,
+    forceStream = false,
   } = options;
 
   // Get file size if not provided
   const bytes = fileSize ?? (await stat(filePath)).size;
 
+  // For very large files (> 100MB), discourage using this function unless forced
+  if (bytes > 100 * 1024 * 1024 && !forceStream) {
+    throw new Error(
+      `File size (${(bytes / (1024 * 1024)).toFixed(2)} MB) is too large for readFileAsBuffer. Use streamFile instead.`,
+    );
+  }
+
   // For large files, use streaming to avoid memory issues
   if (bytes > streamThreshold) {
     const chunks: Buffer[] = [];
-    const stream = createReadStream(filePath, {
-      highWaterMark,
-    });
-
-    for await (const chunk of stream) {
-      chunks.push(chunk as Buffer);
-    }
+    await streamFile(
+      filePath,
+      (chunk) => {
+        chunks.push(chunk as Buffer);
+      },
+      { highWaterMark, fileSize: bytes },
+    );
 
     return { content: Buffer.concat(chunks), bytes };
   }

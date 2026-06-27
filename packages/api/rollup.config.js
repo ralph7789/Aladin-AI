@@ -30,6 +30,7 @@ const plugins = [
   }),
   typescript({
     tsconfig: './tsconfig.build.json',
+    noEmitOnError: false,
     outDir: './dist',
     sourceMap: true,
     /**

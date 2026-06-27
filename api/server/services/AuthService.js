@@ -69,9 +69,9 @@ const logoutUser = async (req, refreshToken) => {
  * Creates Token and corresponding Hash for verification
  * @returns {[string, string]}
  */
-const createTokenHash = () => {
+const createTokenHash = async () => {
   const token = Buffer.from(webcrypto.getRandomValues(new Uint8Array(32))).toString('hex');
-  const hash = bcrypt.hashSync(token, 10);
+  const hash = await bcrypt.hash(token, 10);
   return [token, hash];
 };
 
@@ -81,7 +81,7 @@ const createTokenHash = () => {
  * @returns {Promise<void>}
  */
 const sendVerificationEmail = async (user) => {
-  const [verifyToken, hash] = createTokenHash();
+  const [verifyToken, hash] = await createTokenHash();
 
   const verificationLink = `${
     domains.client
@@ -136,7 +136,7 @@ const verifyEmail = async (req) => {
     return new Error('Invalid or expired password reset token');
   }
 
-  const isValid = bcrypt.compareSync(token, emailVerificationData.token);
+  const isValid = await bcrypt.compare(token, emailVerificationData.token);
 
   if (!isValid) {
     logger.warn(
@@ -205,7 +205,8 @@ const registerUser = async (user, additionalData = {}) => {
     //determine if this is the first registered user (not counting anonymous_user)
     const isFirstRegisteredUser = (await countUsers()) === 0;
 
-    const salt = bcrypt.genSaltSync(10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
     const newUserData = {
       provider: provider ?? 'local',
       email,
@@ -213,7 +214,7 @@ const registerUser = async (user, additionalData = {}) => {
       name,
       avatar: null,
       role: isFirstRegisteredUser ? SystemRoles.ADMIN : SystemRoles.USER,
-      password: bcrypt.hashSync(password, salt),
+      password: hashedPassword,
       ...additionalData,
     };
 
@@ -272,7 +273,7 @@ const requestPasswordReset = async (req) => {
 
   await deleteTokens({ userId: user._id });
 
-  const [resetToken, hash] = createTokenHash();
+  const [resetToken, hash] = await createTokenHash();
 
   await createToken({
     userId: user._id,
@@ -330,13 +331,13 @@ const resetPassword = async (userId, token, password) => {
     return new Error('Invalid or expired password reset token');
   }
 
-  const isValid = bcrypt.compareSync(token, passwordResetToken.token);
+  const isValid = await bcrypt.compare(token, passwordResetToken.token);
 
   if (!isValid) {
     return new Error('Invalid or expired password reset token');
   }
 
-  const hash = bcrypt.hashSync(password, 10);
+  const hash = await bcrypt.hash(password, 10);
   const user = await updateUser(userId, { password: hash });
 
   if (checkEmailConfig()) {
@@ -494,7 +495,7 @@ const resendVerificationEmail = async (req) => {
       return { status: 200, message: genericVerificationMessage };
     }
 
-    const [verifyToken, hash] = createTokenHash();
+    const [verifyToken, hash] = await createTokenHash();
 
     const verificationLink = `${
       domains.client

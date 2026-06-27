@@ -1,9 +1,5 @@
 import logger from '~/config/winston';
-import {
-  EModelEndpoint,
-  validateAzureGroups,
-  mapModelToAzureConfig,
-} from 'aladin-data-provider';
+import { EModelEndpoint, validateAzureGroups, mapModelToAzureConfig } from 'aladin-data-provider';
 import type { TCustomConfig, TAzureConfig } from 'aladin-data-provider';
 
 /**

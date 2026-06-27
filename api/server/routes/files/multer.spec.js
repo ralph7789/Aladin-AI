@@ -242,11 +242,7 @@ describe('Multer Configuration', () => {
   describe('File Filter with Real defaultFileConfig', () => {
     it('should use real fileConfig.checkType for validation', async () => {
       // Test with actual aladin-data-provider functions
-      const {
-        fileConfig,
-        imageMimeTypes,
-        applicationMimeTypes,
-      } = require('aladin-data-provider');
+      const { fileConfig, imageMimeTypes, applicationMimeTypes } = require('aladin-data-provider');
 
       // Test that the real checkType function works with regex patterns
       expect(fileConfig.checkType('image/jpeg', [imageMimeTypes])).toBe(true);

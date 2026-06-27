@@ -1,12 +1,7 @@
 const { ObjectId } = require('mongodb');
 const { escapeRegExp } = require('@aladin/api');
 const { logger } = require('@aladin/data-schemas');
-const {
-  Constants,
-  SystemRoles,
-  ResourceType,
-  SystemCategories,
-} = require('aladin-data-provider');
+const { Constants, SystemRoles, ResourceType, SystemCategories } = require('aladin-data-provider');
 const {
   removeGroupFromAllProjects,
   removeGroupIdsFromProject,

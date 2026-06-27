@@ -276,6 +276,20 @@ class GoogleClient extends BaseClient {
       const role = _message.isCreatedByUser ? this.userLabel : this.modelLabel;
       const parts = [];
       parts.push({ text: _message.text });
+
+      if (_message.files?.length) {
+        for (const file of _message.files) {
+          if (file.source === FileSources.google) {
+            parts.push({
+              fileData: {
+                mimeType: file.type,
+                fileUri: file.filepath,
+              },
+            });
+          }
+        }
+      }
+
       if (!_message.image_urls?.length) {
         formattedMessages.push({ role, parts });
         continue;
@@ -368,7 +382,7 @@ class GoogleClient extends BaseClient {
     this.userLabel = 'user';
     this.modelLabel = 'model';
     const promises = [];
-    promises.push(await this.formatGenerativeMessages(messages));
+    promises.push(this.formatGenerativeMessages(messages));
     promises.push(this.buildAugmentedPrompt(messages));
     const [formattedMessages] = await Promise.all(promises);
     return { prompt: formattedMessages };
@@ -386,8 +400,8 @@ class GoogleClient extends BaseClient {
     if (this.systemMessage) {
       const instructionsTokenCount = this.getTokenCount(this.systemMessage);
 
-      this.maxContextTokens = this.maxContextTokens - instructionsTokenCount;
-      if (this.maxContextTokens < 0) {
+      const effectiveMaxContextTokens = this.maxContextTokens - instructionsTokenCount;
+      if (effectiveMaxContextTokens < 0) {
         const info = `${instructionsTokenCount} / ${this.maxContextTokens}`;
         const errorMessage = `{ "type": "${ErrorTypes.INPUT_LENGTH}", "info": "${info}" }`;
         logger.warn(`Instructions token count exceeds max context (${info}).`);
@@ -422,7 +436,7 @@ class GoogleClient extends BaseClient {
     }
 
     if (this.options.attachments && this.isGenerativeModel) {
-      const result = this.buildVisionMessages(messages, parentMessageId);
+      const result = await this.buildVisionMessages(messages, parentMessageId);
       result.tokenCountMap = tokenCountMap;
       result.promptTokens = promptTokens;
       return result;
@@ -957,7 +971,7 @@ class GoogleClient extends BaseClient {
   async sendCompletion(payload, opts = {}) {
     let reply = '';
     reply = await this.getCompletion(payload, opts);
-    return reply.trim();
+    return { completion: reply.trim(), metadata: {} };
   }
 
   getEncoding() {

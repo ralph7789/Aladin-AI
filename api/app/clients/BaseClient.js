@@ -658,7 +658,7 @@ class BaseClient {
         logger.debug('[BaseClient] userMessage', userMessage);
       }
 
-      this.handleTokenCountMap(tokenCountMap);
+      await this.handleTokenCountMap(tokenCountMap);
     }
 
     if (!isEdited && !this.skipSaveUserMessage) {
@@ -1025,6 +1025,12 @@ class BaseClient {
       return [];
     }
 
+    const messageMap = new Map();
+    for (const msg of messages) {
+      const id = msg.messageId ?? msg.id;
+      if (id) messageMap.set(id, msg);
+    }
+
     const orderedMessages = [];
     let currentMessageId = parentMessageId;
     const visitedMessageIds = new Set();
@@ -1033,10 +1039,7 @@ class BaseClient {
       if (visitedMessageIds.has(currentMessageId)) {
         break;
       }
-      const message = messages.find((msg) => {
-        const messageId = msg.messageId ?? msg.id;
-        return messageId === currentMessageId;
-      });
+      const message = messageMap.get(currentMessageId);
 
       visitedMessageIds.add(currentMessageId);
 

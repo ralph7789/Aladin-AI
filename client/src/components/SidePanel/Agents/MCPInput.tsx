@@ -1,39 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Label, Checkbox, Spinner, useToastContext } from '@aladin/client';
-import type { MCP } from 'aladin-data-provider';
+import { useUpdateAgentMutation } from '~/data-provider';
+import type { MCP, AgentUpdateParams } from 'aladin-data-provider';
 import MCPAuth from '~/components/SidePanel/Builder/MCPAuth';
 import MCPIcon from '~/components/SidePanel/Agents/MCPIcon';
 import { MCPForm } from '~/common/types';
 import { useLocalize } from '~/hooks';
-
-function useUpdateAgentMCP({
-  onSuccess,
-  onError,
-}: {
-  onSuccess: (data: [string, MCP]) => void;
-  onError: (error: Error) => void;
-}) {
-  return {
-    mutate: async ({
-      mcp_id,
-      metadata,
-      agent_id,
-    }: {
-      mcp_id?: string;
-      metadata: MCP['metadata'];
-      agent_id: string;
-    }) => {
-      try {
-        // TODO: Implement MCP endpoint
-        onSuccess(['success', { mcp_id, metadata, agent_id } as MCP]);
-      } catch (error) {
-        onError(error as Error);
-      }
-    },
-    isLoading: false,
-  };
-}
 
 interface MCPInputProps {
   mcp?: MCP;
@@ -54,6 +27,8 @@ export default function MCPInput({ mcp, agent_id, setMCP }: MCPInputProps) {
   const [showTools, setShowTools] = useState(false);
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
 
+  const updateAgent = useUpdateAgentMutation();
+
   // Initialize tools list if editing existing MCP
   useEffect(() => {
     if (mcp?.mcp_id && mcp.metadata.tools) {
@@ -62,45 +37,42 @@ export default function MCPInput({ mcp, agent_id, setMCP }: MCPInputProps) {
     }
   }, [mcp]);
 
-  const updateAgentMCP = useUpdateAgentMCP({
-    onSuccess(data) {
-      showToast({
-        message: localize('com_ui_update_mcp_success'),
-        status: 'success',
-      });
-      setMCP(data[1]);
-      setShowTools(true);
-      setSelectedTools(data[1].metadata.tools ?? []);
-      setIsLoading(false);
-    },
-    onError(error) {
-      showToast({
-        message: (error as Error).message || localize('com_ui_update_mcp_error'),
-        status: 'error',
-      });
-      setIsLoading(false);
-    },
-  });
-
   const saveMCP = handleSubmit(async (data: MCPForm) => {
+    if (!agent_id) {
+      return;
+    }
     setIsLoading(true);
     try {
-      const response = await updateAgentMCP.mutate({
-        agent_id: agent_id ?? '',
-        mcp_id: mcp?.mcp_id,
+      const mcpData: MCP = {
+        mcp_id: mcp?.mcp_id ?? data.name,
+        agent_id,
         metadata: {
           ...data,
           tools: selectedTools,
         },
+      };
+
+      const updateParams: AgentUpdateParams = {
+        // We need to fetch current agent and update its mcp list
+        // For now, assuming the backend handles merging or this replaces it
+        mcp: [mcpData],
+      };
+
+      await updateAgent.mutateAsync({
+        agent_id,
+        data: updateParams,
       });
-      setMCP(response[1]);
+
+      setMCP(mcpData);
+      setShowTools(true);
+      setSelectedTools(selectedTools);
       showToast({
         message: localize('com_ui_update_mcp_success'),
         status: 'success',
       });
-    } catch {
+    } catch (error) {
       showToast({
-        message: localize('com_ui_update_mcp_error'),
+        message: (error as Error).message || localize('com_ui_update_mcp_error'),
         status: 'error',
       });
     } finally {

@@ -1,12 +1,7 @@
 const { z } = require('zod');
 const { tool } = require('@langchain/core/tools');
 const { logger } = require('@aladin/data-schemas');
-const {
-  Providers,
-  StepTypes,
-  GraphEvents,
-  Constants: AgentConstants,
-} = require('@aladin/agents');
+const { Providers, StepTypes, GraphEvents, Constants: AgentConstants } = require('@aladin/agents');
 const {
   sendEvent,
   MCPOAuthHandler,

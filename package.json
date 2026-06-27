@@ -100,7 +100,8 @@
     "@eslint/compat": "^1.2.6",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.20.0",
-    "@playwright/test": "^1.56.1",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
+    "@playwright/test": "1.58.2",
     "@types/react-virtualized": "^9.22.0",
     "caniuse-lite": "^1.0.30001741",
     "cross-env": "^7.0.3",
@@ -125,7 +126,6 @@
     "typescript-eslint": "^8.24.0"
   },
   "overrides": {
-    "axios": "1.12.1",
     "elliptic": "^6.6.1",
     "form-data": "^4.0.4",
     "mdast-util-gfm-autolink-literal": "2.0.0",
@@ -156,5 +156,16 @@
       "admin/",
       "packages/"
     ]
+  },
+  "dependencies": {
+    "@langchain/core": "1.1.24",
+    "@react-spring/web": "^10.1.1",
+    "axios": "1.13.5",
+    "framer-motion": "^10.18.0",
+    "hono": "4.11.9",
+    "lucide-react": "^0.525.0",
+    "qs": "6.15.0",
+    "react-router-dom": "7.13.0",
+    "undici": "7.22.0"
   }
 }

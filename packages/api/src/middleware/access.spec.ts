@@ -1,10 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import {
-  Permissions,
-  PermissionTypes,
-  EModelEndpoint,
-  EndpointURLs,
-} from 'aladin-data-provider';
+import { Permissions, PermissionTypes, EModelEndpoint, EndpointURLs } from 'aladin-data-provider';
 import type { IRole, IUser } from '@aladin/data-schemas';
 import { checkAccess, generateCheckAccess, skipAgentCheck } from './access';
 

@@ -1,10 +1,6 @@
 const { logger } = require('@aladin/data-schemas');
 const { Constants } = require('aladin-data-provider');
-const {
-  sendEvent,
-  sanitizeFileForTransmit,
-  sanitizeMessageForTransmit,
-} = require('@aladin/api');
+const { sendEvent, sanitizeFileForTransmit, sanitizeMessageForTransmit } = require('@aladin/api');
 const {
   handleAbortError,
   createAbortController,

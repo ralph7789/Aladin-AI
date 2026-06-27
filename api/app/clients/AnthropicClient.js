@@ -761,7 +761,7 @@ class AnthropicClient extends BaseClient {
 
     let requestOptions = {
       model,
-      stream: stream || true,
+      stream: stream ?? true,
       stop_sequences,
       temperature,
       metadata,
@@ -822,16 +822,18 @@ class AnthropicClient extends BaseClient {
 
       while (attempts < maxRetries) {
         let response;
+        const abortHandler = () => {
+          logger.debug('[AnthropicClient] message aborted!');
+          if (response?.controller?.abort) {
+            response.controller.abort();
+          }
+        };
+
         try {
           const client = this.getClient(requestOptions);
           response = await this.createResponse(client, requestOptions);
 
-          signal.addEventListener('abort', () => {
-            logger.debug('[AnthropicClient] message aborted!');
-            if (response.controller?.abort) {
-              response.controller.abort();
-            }
-          });
+          signal.addEventListener('abort', abortHandler);
 
           for await (const completion of response) {
             const type = completion?.type ?? '';
@@ -860,12 +862,7 @@ class AnthropicClient extends BaseClient {
             throw new Error(`Operation failed after ${maxRetries} attempts: ${error.message}`);
           }
         } finally {
-          signal.removeEventListener('abort', () => {
-            logger.debug('[AnthropicClient] message aborted!');
-            if (response.controller?.abort) {
-              response.controller.abort();
-            }
-          });
+          signal.removeEventListener('abort', abortHandler);
         }
       }
     }

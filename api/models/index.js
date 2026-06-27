@@ -49,10 +49,10 @@ const seedLicenses = async () => {
       license = await License.create(l);
       console.log(`Created License: ${l.name}`);
     }
-    
+
     // Ensure policies exist
     for (const m of l.models) {
-        await enforcer.addPolicy(l.name, m, 'access');
+      await enforcer.addPolicy(l.name, m, 'access');
     }
   }
 };
@@ -70,7 +70,7 @@ const seedUsers = async () => {
       password: 'password123',
       name: 'Jeko',
       role: 'ADMIN',
-      license: 'KuchooDev'
+      license: 'KuchooDev',
     },
     {
       username: 'Aladin',
@@ -78,8 +78,8 @@ const seedUsers = async () => {
       password: 'password123',
       name: 'Aladin',
       role: 'ADMIN',
-      license: 'JekoCore'
-    }
+      license: 'JekoCore',
+    },
   ];
 
   for (const u of users) {
@@ -96,12 +96,12 @@ const seedUsers = async () => {
       });
       console.log(`Created User: ${u.username}`);
     }
-    
+
     // Check if grouping policy exists, if not add it
     const hasGrouping = await enforcer.hasGroupingPolicy(u.username, u.license);
     if (!hasGrouping) {
-        await enforcer.addGroupingPolicy(u.username, u.license);
-        console.log(`Assigned license ${u.license} to user ${u.username}`);
+      await enforcer.addGroupingPolicy(u.username, u.license);
+      console.log(`Assigned license ${u.license} to user ${u.username}`);
     }
   }
 };

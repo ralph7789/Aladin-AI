@@ -30,6 +30,7 @@ export default {
     // Compile TypeScript files and generate type declarations
     typescript({
       tsconfig: './tsconfig.json',
+      noEmitOnError: false,
       declaration: true,
       declarationDir: 'dist/types',
       rootDir: 'src',

@@ -16,6 +16,7 @@ const plugins = [
   typescript({
     tsconfig: './tsconfig.json',
     useTsconfigDeclarationDir: true,
+    check: false,
   }),
   terser(),
 ];

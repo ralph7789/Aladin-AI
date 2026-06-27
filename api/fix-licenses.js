@@ -18,8 +18,8 @@ async function fixLicenses() {
     const jekoCore = await License.findOne({ name: 'JekoCore' });
 
     if (!kuchooDev || !jekoCore) {
-        console.error('Could not find licenses! Run seed first?');
-        process.exit(1);
+      console.error('Could not find licenses! Run seed first?');
+      process.exit(1);
     }
 
     console.log(`Found License KuchooDev: ${kuchooDev._id}`);
@@ -28,23 +28,23 @@ async function fixLicenses() {
     // 2. Update Jeko -> KuchooDev
     const jeko = await User.findOne({ username: 'Jeko' });
     if (jeko) {
-        console.log(`Updating Jeko (current license: ${jeko.license})...`);
-        jeko.license = kuchooDev._id;
-        await jeko.save();
-        console.log('Jeko updated successfully.');
+      console.log(`Updating Jeko (current license: ${jeko.license})...`);
+      jeko.license = kuchooDev._id;
+      await jeko.save();
+      console.log('Jeko updated successfully.');
     } else {
-        console.log('User Jeko not found.');
+      console.log('User Jeko not found.');
     }
 
     // 3. Update Aladin -> JekoCore
     const aladin = await User.findOne({ username: 'Aladin' });
     if (aladin) {
-        console.log(`Updating Aladin (current license: ${aladin.license})...`);
-        aladin.license = jekoCore._id;
-        await aladin.save();
-        console.log('Aladin updated successfully.');
+      console.log(`Updating Aladin (current license: ${aladin.license})...`);
+      aladin.license = jekoCore._id;
+      await aladin.save();
+      console.log('Aladin updated successfully.');
     } else {
-        console.log('User Aladin not found.');
+      console.log('User Aladin not found.');
     }
 
     process.exit(0);

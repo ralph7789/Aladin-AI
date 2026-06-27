@@ -7,7 +7,9 @@ const {
   filterFile,
   processImageFile,
   processAgentFileUpload,
+  processDeleteRequest,
 } = require('~/server/services/Files/process');
+const { getFileStrategy } = require('~/server/utils/getFileStrategy');
 
 const router = express.Router();
 
@@ -27,8 +29,17 @@ router.post('/', async (req, res) => {
 
     await processImageFile({ req, res, metadata });
   } catch (error) {
-    // TODO: delete remote file if it exists
     logger.error('[/files/images] Error processing file:', error);
+
+    try {
+      const source = getFileStrategy(appConfig, { isImage: true });
+      await processDeleteRequest({
+        req,
+        files: [{ file_id: metadata.file_id, source }],
+      });
+    } catch (deleteError) {
+      logger.error('[/files/images] Error deleting remote file:', deleteError);
+    }
 
     let message = 'Error processing file';
 

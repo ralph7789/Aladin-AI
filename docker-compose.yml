@@ -62,7 +62,9 @@ services:
       - pgdata2:/var/lib/postgresql/data
   rag_api:
     container_name: aladin-rag-api
-    image: aladin-rag-api
+    build:
+      context: ./aladin-rag-api
+      dockerfile: Dockerfile
     environment:
       - DB_HOST=vectordb
       - RAG_PORT=${RAG_PORT:-8000}

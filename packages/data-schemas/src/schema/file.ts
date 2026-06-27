@@ -70,6 +70,9 @@ const file: Schema<IMongoFile> = new Schema(
     metadata: {
       fileIdentifier: String,
     },
+    usage_metadata: {
+      total_tokens: Number,
+    },
     expiresAt: {
       type: Date,
       expires: 3600, // 1 hour in seconds
