@@ -60,6 +60,17 @@ services:
     restart: always
     volumes:
       - pgdata2:/var/lib/postgresql/data
+  litellm:
+    container_name: litellm-proxy
+    image: ghcr.io/berriai/litellm:main-latest
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://myuser:mypassword@vectordb:5432/mydatabase
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-1234}
+    restart: always
+    depends_on:
+      - vectordb
   rag_api:
     container_name: aladin-rag-api
     build:

@@ -27,6 +27,7 @@ import AdminLayout from './Layouts/Admin';
 import UsersPage from '~/components/Admin/Users/UsersPage';
 import LicensesPage from '~/components/Admin/Licenses/LicensesPage';
 import RolesPage from '~/components/Admin/Roles/RolesPage';
+import ModelManagementPage from '~/components/Admin/ModelManagement/ModelManagementPage';
 
 const AuthLayout = () => (
   <AuthContextProvider>
@@ -109,6 +110,7 @@ export const router = createBrowserRouter(
             { path: 'users', element: <UsersPage /> },
             { path: 'licenses', element: <LicensesPage /> },
             { path: 'roles', element: <RolesPage /> },
+            { path: 'models', element: <ModelManagementPage /> },
             { index: true, element: <Navigate to="users" replace /> },
           ],
         },
