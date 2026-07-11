@@ -5,7 +5,7 @@ services:
   api:
     container_name: Aladin
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-3080}:${PORT:-3080}"
     depends_on:
       - mongodb
       - rag_api
@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     image: aladin-api
     restart: always
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
@@ -35,7 +35,7 @@ services:
     container_name: aladin-mongodb
     image: mongo
     restart: always
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - ./data-node:/data/db
     command: mongod --noauth
@@ -43,11 +43,11 @@ services:
     container_name: aladin-meilisearch
     image: getmeili/meilisearch:v1.12.3
     restart: always
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - MEILI_HOST=http://meilisearch:7700
       - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-DrhYf7zENyR6AlUCKmnz0eYASOQdl6zxH7s7MKFSfFCt}
     volumes:
       - ./meili_data_v1.12:/meili_data
   vectordb:
