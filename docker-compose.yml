@@ -37,7 +37,7 @@ services:
     restart: always
     volumes:
       - mongodb_data:/data/db
-    command: mongod --noauth
+    command: mongod --noauth --wiredTigerCacheSizeGB 0.5
   meilisearch:
     container_name: aladin-meilisearch
     image: getmeili/meilisearch:v1.12.3
@@ -55,6 +55,7 @@ services:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
+    command: postgres -c shared_buffers=128MB
     restart: always
     volumes:
       - pgdata2:/var/lib/postgresql/data
