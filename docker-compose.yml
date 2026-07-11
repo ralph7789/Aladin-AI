@@ -35,21 +35,19 @@ services:
     container_name: aladin-mongodb
     image: mongo
     restart: always
-    user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      - ./data-node:/data/db
+      - mongodb_data:/data/db
     command: mongod --noauth
   meilisearch:
     container_name: aladin-meilisearch
     image: getmeili/meilisearch:v1.12.3
     restart: always
-    user: "${UID:-1000}:${GID:-1000}"
     environment:
       - MEILI_HOST=http://meilisearch:7700
       - MEILI_NO_ANALYTICS=true
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-DrhYf7zENyR6AlUCKmnz0eYASOQdl6zxH7s7MKFSfFCt}
     volumes:
-      - ./meili_data_v1.12:/meili_data
+      - meilisearch_data:/meili_data
   vectordb:
     container_name: vectordb
     image: pgvector/pgvector:0.8.0-pg15-trixie
@@ -87,3 +85,5 @@ services:
 
 volumes:
   pgdata2:
+  mongodb_data:
+  meilisearch_data:
