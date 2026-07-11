@@ -62,125 +62,91 @@
   --font-size-xl: 1.25rem;
   --markdown-font-size: 1rem;
 }
-html {
-  --brand-purple: #ab68ff;
-  --presentation: var(--white);
-  --text-primary: var(--gray-800);
-  --text-secondary: var(--gray-600);
-  --text-secondary-alt: var(--gray-500);
-  --text-tertiary: var(--gray-500);
-  --text-warning: var(--amber-500);
-  --ring-primary: var(--gray-500);
-  --header-primary: var(--white);
-  --header-hover: var(--gray-50);
-  --header-button-hover: var(--gray-50);
-  --surface-active: var(--gray-100);
-  --surface-active-alt: var(--gray-200);
-  --surface-hover: var(--gray-200);
-  --surface-hover-alt: var(--gray-300);
-  --surface-primary: var(--white);
-  --surface-primary-alt: var(--gray-50);
-  --surface-primary-contrast: var(--gray-100);
-  --surface-secondary: var(--gray-50);
-  --surface-secondary-alt: var(--gray-200);
-  --surface-tertiary: var(--gray-100);
-  --surface-tertiary-alt: var(--white);
-  --surface-dialog: var(--white);
-  --surface-submit: var(--green-700);
-  --surface-submit-hover: var(--green-800);
-  --surface-destructive: var(--red-700);
-  --surface-destructive-hover: var(--red-800);
-  --surface-chat: var(--white);
-  --border-light: var(--gray-200);
-  --border-medium-alt: var(--gray-300);
-  --border-medium: var(--gray-300);
-  --border-heavy: var(--gray-400);
-  --border-xheavy: var(--gray-500);
-  /* These are test styles */
+html, .dark {
+  --brand-purple: #8b5cf6;
+  --presentation: #0f1117;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-secondary-alt: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-warning: #f59e0b;
+  --ring-primary: #38bdf8;
+  --header-primary: #020617;
+  --header-hover: rgba(30, 41, 59, 0.7);
+  --header-button-hover: rgba(51, 65, 85, 0.8);
+  --surface-active: rgba(30, 41, 59, 0.8);
+  --surface-active-alt: rgba(51, 65, 85, 0.6);
+  --surface-hover: rgba(30, 41, 59, 0.5);
+  --surface-hover-alt: rgba(51, 65, 85, 0.4);
+  --surface-primary: #020617;
+  --surface-primary-alt: #0f172a;
+  --surface-primary-contrast: #1e293b;
+  --surface-secondary: rgba(15, 23, 42, 0.65);
+  --surface-secondary-alt: rgba(30, 41, 59, 0.65);
+  --surface-tertiary: rgba(51, 65, 85, 0.5);
+  --surface-tertiary-alt: rgba(71, 85, 105, 0.4);
+  --surface-dialog: #0f172a;
+  --surface-submit: #0ea5e9;
+  --surface-submit-hover: #38bdf8;
+  --surface-destructive: #e11d48;
+  --surface-destructive-hover: #f43f5e;
+  --surface-chat: #020617;
+  --border-light: rgba(255,255,255,0.05);
+  --border-medium: rgba(255,255,255,0.1);
+  --border-medium-alt: rgba(255,255,255,0.15);
+  --border-heavy: rgba(255,255,255,0.2);
+  --border-xheavy: rgba(255,255,255,0.3);
 
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --primary: 0 0% 9%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 0 0% 96.1%;
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
-  --radius: 0.5rem;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 346.8 77.2% 49.8%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+  --radius: 0.75rem; 
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
   --chart-4: 43 74% 66%;
   --chart-5: 27 87% 67%;
-  --switch-unchecked: 0 0% 58%;
+  --switch-unchecked: 217 32% 17%;
 }
-.dark {
-  --brand-purple: #9d4edd;
-  --presentation: var(--gray-800);
-  --text-primary: var(--gray-100);
-  --text-secondary: var(--gray-300);
-  --text-secondary-alt: var(--gray-400);
-  --text-tertiary: var(--gray-500);
-  --text-warning: var(--amber-500);
-  --header-primary: #0d0d12;
-  --header-hover: #161622;
-  --header-button-hover: #1a1a24;
-  --surface-active: #1e1e2d;
-  --surface-active-alt: #161622;
-  --surface-hover: #161622;
-  --surface-hover-alt: #1a1a24;
-  --surface-primary: #08080c;
-  --surface-primary-alt: #0a0a0f;
-  --surface-primary-contrast: #0d0d12;
-  --surface-secondary: #101018;
-  --surface-secondary-alt: #12121a;
-  --surface-tertiary: #161622;
-  --surface-tertiary-alt: #1a1a24;
-  --surface-dialog: #12121a;
-  --surface-submit: #00d4ff;
-  --surface-submit-hover: #00b3e6;
-  --surface-destructive: var(--red-800);
-  --surface-destructive-hover: var(--red-900);
-  --surface-chat: #101018;
-  --border-light: rgba(255,255,255,0.05);
-  --border-medium-alt: rgba(255,255,255,0.08);
-  --border-medium: rgba(255,255,255,0.1);
-  --border-heavy: rgba(0, 212, 255, 0.3); /* Neon cyan subtle glow */
-  --border-xheavy: rgba(157, 78, 221, 0.5); /* Neon purple subtle glow */
-  /* These are test styles */
 
-  --background: 0 0% 7%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 9%;
-  --secondary: 0 0% 14.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 14.9%;
-  --muted-foreground: 0 0% 63.9%;
-  --accent: 0 0% 14.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 40.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 14.9%;
-  --input: 0 0% 14.9%;
-  --ring: 0 0% 83.1%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-  --switch-unchecked: 0 0% 40%;
+body {
+  background: linear-gradient(135deg, #020617 0%, #0f172a 100%) !important;
+  color: var(--text-primary);
+  transition: background 0.3s ease;
+}
+
+#root, main, [class*="bg-"] {
+  background-color: transparent !important;
+}
+
+nav, header, .nav, [class*="glass"] {
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+button {
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+button:active {
+  transform: scale(0.95);
 }
 .gizmo {
   --text-primary: var(--gizmo-gray-950);
