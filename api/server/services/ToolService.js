@@ -287,7 +287,7 @@ async function processRequiredActions(client, requiredActions) {
       // Find the matching domain for this tool
       let currentDomain = '';
       for (const domain of actionSets.domainMap.keys()) {
-        if (currentAction.tool.includes(domain)) {
+        if (currentAction.tool.endsWith(actionDelimiter + domain)) {
           currentDomain = domain;
           break;
         }
@@ -594,7 +594,7 @@ async function loadAgentTools({ req, res, agent, signal, tool_resources, openAIA
     // Find the matching domain for this tool
     let currentDomain = '';
     for (const domain of domainMap.keys()) {
-      if (toolName.includes(domain)) {
+      if (toolName.endsWith(actionDelimiter + domain)) {
         currentDomain = domain;
         break;
       }

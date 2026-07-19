@@ -188,8 +188,8 @@ const getResourcePermissions = async (req, res) => {
       {
         $match: {
           resourceType,
-          resourceId: mongoose.Types.ObjectId.isValid(resourceId)
-            ? mongoose.Types.ObjectId.createFromHexString(resourceId)
+          resourceId: /^[0-9a-fA-F]{24}$/.test(resourceId)
+            ? { $in: [mongoose.Types.ObjectId.createFromHexString(resourceId), resourceId] }
             : resourceId,
         },
       },

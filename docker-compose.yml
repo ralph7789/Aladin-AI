@@ -45,7 +45,7 @@ services:
     environment:
       - MEILI_HOST=http://meilisearch:7700
       - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-DrhYf7zENyR6AlUCKmnz0eYASOQdl6zxH7s7MKFSfFCt}
+      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-ChangeMe}
     volumes:
       - meilisearch_data:/meili_data
   vectordb:
@@ -54,7 +54,7 @@ services:
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-PostgresChangeMe}
     command: postgres -c shared_buffers=128MB
     restart: always
     volumes:
@@ -65,8 +65,8 @@ services:
     ports:
       - "4000:4000"
     environment:
-      - DATABASE_URL=postgresql://myuser:mypassword@vectordb:5432/mydatabase
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-1234}
+      - DATABASE_URL=postgresql://myuser:${POSTGRES_PASSWORD:-PostgresChangeMe}@vectordb:5432/mydatabase
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-ChangeMe}
     restart: always
     depends_on:
       - vectordb

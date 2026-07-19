@@ -109,6 +109,17 @@ class DeleteRequest(BaseModel):
 
 @app.delete("/documents")
 async def delete_document(req: DeleteRequest):
-    # In a full production app, implement native PostgreSQL delete via SQLAlchemy
-    # For now, we return success as it's mocked via LangChain limitations
-    return {"status": True, "message": f"Deleted vectors for {req.file_id}"}
+    from sqlalchemy import create_engine, text
+    try:
+        engine = create_engine(CONNECTION_STRING)
+        with engine.begin() as conn:
+            query = text("""
+                DELETE FROM langchain_pg_embedding 
+                WHERE collection_id = (SELECT uuid FROM langchain_pg_collection WHERE name = :collection_name) 
+                AND cmetadata->>'file_id' = :file_id
+            """)
+            conn.execute(query, {"collection_name": COLLECTION_NAME, "file_id": req.file_id})
+        return {"status": True, "message": f"Deleted vectors for {req.file_id}"}
+    except Exception as e:
+        print(f"Delete error: {e}")
+        return {"status": False, "error": str(e)}
