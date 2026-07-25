@@ -51,6 +51,8 @@ RUN npm run build
 FROM base AS client-package-build
 WORKDIR /app/packages/client
 COPY packages/client ./
+# Artificial dependency to force BuildKit to run this strictly after api-package-build finishes
+COPY --from=api-package-build /app/packages/api/package.json ./dummy-dependency.json
 RUN npm run build
 
 # Client build
