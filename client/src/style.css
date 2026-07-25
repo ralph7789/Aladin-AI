@@ -131,16 +131,7 @@ body {
   transition: background 0.3s ease;
 }
 
-#root, main, [class*="bg-"] {
-  background-color: transparent !important;
-}
 
-nav, header, .nav, [class*="glass"] {
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  background-color: rgba(15, 23, 42, 0.6) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
 
 button {
   transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
