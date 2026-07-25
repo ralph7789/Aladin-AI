@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { VolumetricOutput } from './components/Spatial/VolumetricOutput';
 import { RecoilRoot } from 'recoil';
 import { DndProvider } from 'react-dnd';
 import { RouterProvider } from 'react-router-dom';
@@ -50,10 +51,6 @@ const App = () => {
                 4. Fall back to default theme colors if nothing is stored */}
             <RadixToast.Provider>
               <ToastProvider>
-import { VolumetricOutput } from './components/Spatial/VolumetricOutput';
-
-// ... other imports
-
                 <DndProvider backend={HTML5Backend}>
                   <VolumetricOutput>
                     <RouterProvider router={router} />
@@ -63,6 +60,7 @@ import { VolumetricOutput } from './components/Spatial/VolumetricOutput';
                   <Toast />
                   <RadixToast.Viewport className="pointer-events-none fixed inset-0 z-[1000] mx-auto my-2 flex max-w-[560px] flex-col items-stretch justify-start md:pb-5" />
                 </DndProvider>
+              </ToastProvider>
             </RadixToast.Provider>
           </ThemeProvider>
         </LiveAnnouncer>
