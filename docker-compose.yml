@@ -11,7 +11,7 @@ services:
       - rag_api
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.multi
     image: aladin-api
     restart: always
     user: "${UID:-1000}:${GID:-1000}"
@@ -19,7 +19,7 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       - HOST=0.0.0.0
-      - MONGO_URI=mongodb://mongodb:27017/Aladin
+      - MONGO_URI=mongodb://admin:AdminChangeMe@mongodb:27017/Aladin?authSource=admin
       - MEILI_HOST=http://meilisearch:7700
       - RAG_PORT=${RAG_PORT:-8000}
       - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
@@ -28,16 +28,19 @@ services:
         source: ./.env
         target: /app/.env
       - ./aladin.yaml:/app/aladin.yaml
-      - ./images:/app/client/public/images
-      - ./uploads:/app/uploads
-      - ./logs:/app/logs
+      - images_data:/app/client/public/images
+      - uploads_data:/app/uploads
+      - logs_data:/app/logs
   mongodb:
     container_name: aladin-mongodb
     image: mongo
     restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=AdminChangeMe
     volumes:
       - mongodb_data:/data/db
-    command: mongod --noauth --wiredTigerCacheSizeGB 0.5
+    command: mongod --wiredTigerCacheSizeGB 0.5
   meilisearch:
     container_name: aladin-meilisearch
     image: getmeili/meilisearch:v1.12.3
@@ -88,3 +91,6 @@ volumes:
   pgdata2:
   mongodb_data:
   meilisearch_data:
+  images_data:
+  uploads_data:
+  logs_data:

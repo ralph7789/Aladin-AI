@@ -229,5 +229,15 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
+});
+
 /** Export app for easier testing purposes */
 module.exports = app;
