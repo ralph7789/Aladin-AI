@@ -3,6 +3,10 @@
 # Exit on any error
 set -e
 
+# Pipe all script output (stdout and stderr) to build-docker.log and the terminal.
+# This will overwrite the log file on every run.
+exec > >(tee build-docker.log) 2>&1
+
 echo "🚀 Building Aladin AI Docker Images Sequentially..."
 echo "This prevents CPU starvation and disconnections in GitHub Codespaces by ensuring"
 echo "the heavy Python compiler and Vite JS bundler don't run at the same time."
