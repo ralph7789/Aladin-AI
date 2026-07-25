@@ -8,11 +8,15 @@ import { ApiErrorBoundaryProvider } from './hooks/ApiErrorBoundaryContext';
 import 'katex/dist/katex.min.css';
 import 'katex/dist/contrib/copy-tex.js';
 
+import { HelmetProvider } from 'react-helmet-async';
+
 const container = document.getElementById('root');
 const root = createRoot(container);
 
 root.render(
-  <ApiErrorBoundaryProvider>
-    <App />
-  </ApiErrorBoundaryProvider>,
+  <HelmetProvider>
+    <ApiErrorBoundaryProvider>
+      <App />
+    </ApiErrorBoundaryProvider>
+  </HelmetProvider>,
 );
