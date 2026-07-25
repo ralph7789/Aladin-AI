@@ -4,10 +4,15 @@ services:
     #   context: .
     #   dockerfile: Dockerfile.multi
     #   target: api-build
-    image: ghcr.io/danny-avila/aladin-dev-api:latest
+    image: ghcr.io/danny-avila/aladin-dev-api:v1.2.0
     container_name: Aladin-API
     ports:
       - 3080:3080
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
     depends_on:
       - mongodb
       - rag_api
