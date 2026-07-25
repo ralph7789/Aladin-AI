@@ -30,7 +30,7 @@ services:
       - ./aladin.yaml:/app/aladin.yaml
       - images_data:/app/client/public/images
       - uploads_data:/app/uploads
-      - logs_data:/app/logs
+      - logs_data:/app/api/logs
   mongodb:
     container_name: aladin-mongodb
     image: mongo

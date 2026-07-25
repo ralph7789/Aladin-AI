@@ -1,6 +1,6 @@
 import os
 import tempfile
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from typing import Optional
 from pydantic import BaseModel
 from fastapi.responses import PlainTextResponse
@@ -68,12 +68,14 @@ async def embed_document(
             split.metadata["chunk_index"] = i
 
         vectorstore.add_documents(splits)
-        os.unlink(temp_path)
         
         return {"known_type": True, "status": True}
     except Exception as e:
         print(f"Embedding error: {e}")
-        return {"known_type": False, "status": False, "error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 class QueryRequest(BaseModel):
     file_id: str

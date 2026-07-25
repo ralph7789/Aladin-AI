@@ -48,9 +48,12 @@ services:
     #   - 27018:27017
     image: mongo
     restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=AdminChangeMe
     volumes:
       - ./data-node:/data/db
-    command: mongod --noauth
+    command: mongod --wiredTigerCacheSizeGB 0.5
   meilisearch:
     container_name: chat-meilisearch
     image: getmeili/meilisearch:v1.12.3
@@ -69,7 +72,8 @@ services:
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-PostgresChangeMe}
+    command: postgres -c shared_buffers=128MB
     restart: always
     volumes:
       - pgdata2:/var/lib/postgresql/data
