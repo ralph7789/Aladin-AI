@@ -8,7 +8,7 @@ function startDataRetentionCron() {
     try {
       // 30 day retention policy
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      // await deleteConvos(null, { updatedAt: { $lt: thirtyDaysAgo } });
+      await deleteConvos(null, { updatedAt: { $lt: thirtyDaysAgo } });
       logger.info('[RETENTION] Successfully purged old chats exceeding retention policy.');
     } catch (err) {
       logger.error('[RETENTION] Error running retention cron:', err);

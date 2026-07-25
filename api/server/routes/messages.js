@@ -204,7 +204,12 @@ router.get('/:conversationId', validateMessageReq, async (req, res) => {
   }
 });
 
+const { redactPII } = require('../../utils/redactPII');
+
 router.post('/:conversationId', validateMessageReq, async (req, res) => {
+  if (req.body && req.body.text) {
+    req.body.text = redactPII(req.body.text);
+  }
   try {
     const message = req.body;
     const savedMessage = await saveMessage(
