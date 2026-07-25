@@ -44,6 +44,7 @@
   },
   "homepage": "https://aladin.ai/",
   "devDependencies": {
+    "@aladin/agents": "npm:@librechat/agents@^3.0.36",
     "@babel/preset-env": "^7.21.5",
     "@babel/preset-react": "^7.18.6",
     "@babel/preset-typescript": "^7.21.0",
@@ -64,10 +65,9 @@
     "@types/node-fetch": "^2.6.13",
     "@types/react": "^18.2.18",
     "@types/winston": "^2.4.4",
-    "@aladin/agents": "npm:@librechat/agents@^3.0.36",
+    "aladin-data-provider": "*",
     "jest": "^30.2.0",
     "jest-junit": "^16.0.0",
-    "aladin-data-provider": "*",
     "mongodb": "^6.14.2",
     "rimraf": "^6.1.2",
     "rollup": "^4.22.4",
@@ -79,6 +79,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
+    "@aladin/data-schemas": "*",
     "@aws-sdk/client-s3": "^3.758.0",
     "@azure/identity": "^4.7.0",
     "@azure/search-documents": "^12.0.0",
@@ -86,8 +87,8 @@
     "@keyv/redis": "^4.3.3",
     "@langchain/core": "^0.3.79",
     "@librechat/agents": "^3.0.36",
-    "@aladin/data-schemas": "*",
     "@modelcontextprotocol/sdk": "^1.21.0",
+    "aladin-data-provider": "*",
     "axios": "^1.12.1",
     "connect-redis": "^8.1.0",
     "diff": "^7.0.0",
@@ -101,7 +102,6 @@
     "jsonwebtoken": "^9.0.0",
     "keyv": "^5.3.2",
     "keyv-file": "^5.1.2",
-    "aladin-data-provider": "*",
     "memorystore": "^1.6.7",
     "mongoose": "^8.12.1",
     "node-fetch": "2.7.0",
@@ -109,5 +109,8 @@
     "tiktoken": "^1.0.15",
     "undici": "^7.10.0",
     "zod": "^3.22.4"
+  },
+  "dependencies": {
+    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0"
   }
 }
