@@ -82,6 +82,6 @@ export default function Header() {
       </div>
       {/* Empty div for spacing */}
       <div />
-    </div>
+    </header>
   );
 }
