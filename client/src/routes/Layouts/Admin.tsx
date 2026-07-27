@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthContext } from '~/hooks/AuthContext';
 import { SystemRoles } from 'aladin-data-provider';
 import { Navigate, Outlet, NavLink } from 'react-router-dom';
-import { Users, Key, Shield } from 'lucide-react';
+import { Users, Key, Shield, Server } from 'lucide-react';
 
 export default function AdminLayout() {
   const { user, isAuthenticated, token } = useAuthContext();
@@ -40,6 +40,7 @@ export default function AdminLayout() {
           <AdminNavLink to="/admin/users" icon={<Users size={20} />} label="Users" />
           <AdminNavLink to="/admin/licenses" icon={<Key size={20} />} label="Licenses" />
           <AdminNavLink to="/admin/roles" icon={<Shield size={20} />} label="Roles & Permissions" />
+          <AdminNavLink to="/admin/models" icon={<Server size={20} />} label="Model Management" />
         </nav>
       </div>
 

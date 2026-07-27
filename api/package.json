@@ -53,6 +53,7 @@
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@modelcontextprotocol/sdk": "^1.21.0",
     "@node-saml/passport-saml": "^5.1.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.221.0",
     "@waylaidwanderer/fetch-event-source": "^3.0.1",
     "aladin-data-provider": "*",
     "axios": "^1.12.1",

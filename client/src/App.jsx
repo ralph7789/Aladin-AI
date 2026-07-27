@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { VolumetricOutput } from './components/Spatial/VolumetricOutput';
 import { RecoilRoot } from 'recoil';
 import { DndProvider } from 'react-dnd';
 import { RouterProvider } from 'react-router-dom';
@@ -51,7 +52,9 @@ const App = () => {
             <RadixToast.Provider>
               <ToastProvider>
                 <DndProvider backend={HTML5Backend}>
-                  <RouterProvider router={router} />
+                  <VolumetricOutput>
+                    <RouterProvider router={router} />
+                  </VolumetricOutput>
                   <WakeLockManager />
                   <ReactQueryDevtools initialIsOpen={false} position="top-right" />
                   <Toast />

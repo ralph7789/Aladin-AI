@@ -1,6 +1,6 @@
 import os
 import tempfile
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from typing import Optional
 from pydantic import BaseModel
 from fastapi.responses import PlainTextResponse
@@ -20,15 +20,15 @@ DB_USER = os.getenv("POSTGRES_USER", "myuser")
 DB_PASS = os.getenv("POSTGRES_PASSWORD", "mypassword")
 
 CONNECTION_STRING = f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-COLLECTION_NAME = "aladin_documents"
 
-# Initialize Embeddings
-# Uses OpenAI if API key provided, otherwise defaults to local open-source embeddings
+# Initialize Embeddings & use separate collections to avoid dimension mismatch
 if os.getenv("OPENAI_API_KEY"):
     embeddings = OpenAIEmbeddings()
+    COLLECTION_NAME = "aladin_documents_openai"
 else:
     from langchain_community.embeddings import HuggingFaceEmbeddings
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    COLLECTION_NAME = "aladin_documents_local"
 
 vectorstore = PGVector(
     embeddings=embeddings,
@@ -61,28 +61,32 @@ async def embed_document(
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         splits = text_splitter.split_documents(docs)
 
-        for split in splits:
+        for i, split in enumerate(splits):
             split.metadata["file_id"] = file_id
             split.metadata["user_id"] = user_id
             split.metadata["source"] = file.filename
+            split.metadata["chunk_index"] = i
 
         vectorstore.add_documents(splits)
-        os.unlink(temp_path)
         
         return {"known_type": True, "status": True}
     except Exception as e:
         print(f"Embedding error: {e}")
-        return {"known_type": False, "status": False, "error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 class QueryRequest(BaseModel):
     file_id: str
+    user_id: str
     query: str
     k: int = 5
     entity_id: Optional[str] = None
 
 @app.post("/query")
 async def query_documents(req: QueryRequest):
-    filter_dict = {"file_id": req.file_id}
+    filter_dict = {"file_id": req.file_id, "user_id": req.user_id}
     results = vectorstore.similarity_search_with_score(req.query, k=req.k, filter=filter_dict)
     
     formatted_results = []
@@ -98,17 +102,32 @@ async def query_documents(req: QueryRequest):
     return formatted_results
 
 @app.get("/documents/{file_id}/context", response_class=PlainTextResponse)
-async def get_document_context(file_id: str):
-    filter_dict = {"file_id": file_id}
-    results = vectorstore.similarity_search("", k=100, filter=filter_dict)
+async def get_document_context(file_id: str, user_id: str):
+    filter_dict = {"file_id": file_id, "user_id": user_id}
+    # Retrieve all chunks for the document and sort sequentially
+    results = vectorstore.similarity_search("document content", k=1000, filter=filter_dict)
+    results.sort(key=lambda x: x.metadata.get("chunk_index", 0))
     context = "\n\n".join([doc.page_content for doc in results])
     return context
 
 class DeleteRequest(BaseModel):
     file_id: str
+    user_id: str
 
 @app.delete("/documents")
 async def delete_document(req: DeleteRequest):
-    # In a full production app, implement native PostgreSQL delete via SQLAlchemy
-    # For now, we return success as it's mocked via LangChain limitations
-    return {"status": True, "message": f"Deleted vectors for {req.file_id}"}
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(CONNECTION_STRING)
+        with engine.begin() as conn:
+            query = text("""
+                DELETE FROM langchain_pg_embedding 
+                WHERE collection_id = (SELECT uuid FROM langchain_pg_collection WHERE name = :collection_name)
+                AND cmetadata->>'file_id' = :file_id
+                AND cmetadata->>'user_id' = :user_id
+            """)
+            conn.execute(query, {"collection_name": COLLECTION_NAME, "file_id": req.file_id, "user_id": req.user_id})
+        return {"status": True, "message": f"Deleted vectors for {req.file_id}"}
+    except Exception as e:
+        print(f"Delete error: {e}")
+        return {"status": False, "error": str(e)}

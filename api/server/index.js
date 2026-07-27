@@ -18,6 +18,7 @@ const {
   initializeFileStorage,
 } = require('@aladin/api');
 const { connectDb, indexSync } = require('~/db');
+const { startDataRetentionCron } = require('./services/retentionCron');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
 const createValidateImageRequest = require('./middleware/validateImageRequest');
 const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
@@ -58,6 +59,7 @@ const startServer = async () => {
   const appConfig = await getAppConfig();
   initializeFileStorage(appConfig);
   await performStartupChecks(appConfig);
+  startDataRetentionCron();
   await updateInterfacePermissions(appConfig);
 
   const indexPath = path.join(appConfig.paths.dist, 'index.html');
@@ -179,7 +181,9 @@ const startServer = async () => {
   });
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 let messageCount = 0;
 process.on('uncaughtException', (err) => {
@@ -227,6 +231,16 @@ process.on('uncaughtException', (err) => {
   }
 
   process.exit(1);
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  process.exit(0);
 });
 
 /** Export app for easier testing purposes */

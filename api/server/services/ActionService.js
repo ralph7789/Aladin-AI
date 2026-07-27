@@ -304,8 +304,8 @@ async function createActionTool({
           await preparedExecutor.setAuth(metadata);
         } catch (error) {
           if (
-            error.message.includes('No access token found') ||
-            error.message.includes('Access token is expired')
+            error?.message?.includes('No access token found') ||
+            error?.message?.includes('Access token is expired')
           ) {
             throw error;
           }
@@ -315,10 +315,10 @@ async function createActionTool({
 
       const response = await preparedExecutor.execute();
 
-      if (typeof response.data === 'object') {
+      if (response && typeof response.data === 'object') {
         return JSON.stringify(response.data);
       }
-      return response.data;
+      return response?.data;
     } catch (error) {
       const message = `API call to ${action.metadata.domain} failed:`;
       return logAxiosError({ message, error });

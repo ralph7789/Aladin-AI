@@ -4,10 +4,15 @@ services:
     #   context: .
     #   dockerfile: Dockerfile.multi
     #   target: api-build
-    image: ghcr.io/danny-avila/aladin-dev-api:latest
+    image: ghcr.io/danny-avila/aladin-dev-api:v1.2.0
     container_name: Aladin-API
     ports:
       - 3080:3080
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
     depends_on:
       - mongodb
       - rag_api
@@ -48,9 +53,12 @@ services:
     #   - 27018:27017
     image: mongo
     restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=AdminChangeMe
     volumes:
       - ./data-node:/data/db
-    command: mongod --noauth
+    command: mongod --wiredTigerCacheSizeGB 0.5
   meilisearch:
     container_name: chat-meilisearch
     image: getmeili/meilisearch:v1.12.3
@@ -69,7 +77,8 @@ services:
     environment:
       POSTGRES_DB: mydatabase
       POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-PostgresChangeMe}
+    command: postgres -c shared_buffers=128MB
     restart: always
     volumes:
       - pgdata2:/var/lib/postgresql/data
