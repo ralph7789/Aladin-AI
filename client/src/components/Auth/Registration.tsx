@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import React, { useContext, useState } from 'react';
+import { trackEvent } from '~/utils/analytics';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { ThemeContext, Spinner, Button, isDark } from '@aladin/client';
 import { useNavigate, useOutletContext, useLocation } from 'react-router-dom';
@@ -123,9 +124,10 @@ const Registration: React.FC = () => {
             className="mt-6"
             aria-label="Registration form"
             method="POST"
-            onSubmit={handleSubmit((data: TRegisterUser) =>
-              registerUser.mutate({ ...data, token: token ?? undefined }),
-            )}
+            onSubmit={handleSubmit((data: TRegisterUser) => {
+              trackEvent('registration_attempt');
+              registerUser.mutate({ ...data, token: token ?? undefined })
+            })}
           >
             {renderInput('name', 'com_auth_full_name', 'text', {
               required: localize('com_auth_name_required'),

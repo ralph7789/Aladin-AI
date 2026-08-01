@@ -58,9 +58,11 @@ router.get('/', async (req, res) => {
       const nextCursor = messages.length > pageSize ? messages.pop()[sortField] : null;
       response = { messages, nextCursor };
     } else if (search) {
-      const searchResults = await Message.meiliSearch(search, { filter: `user = "${user}"` }, true);
-
-      const messages = searchResults.hits || [];
+      // Fallback: Using native MongoDB search since Meilisearch container is removed
+      const messages = await Message.find({
+        user: user,
+        text: { $regex: search, $options: 'i' }
+      }).limit(50).lean();
 
       const result = await getConvosQueried(req.user.id, messages, cursor);
 
@@ -204,7 +206,12 @@ router.get('/:conversationId', validateMessageReq, async (req, res) => {
   }
 });
 
+const { redactPII } = require('../../utils/redactPII');
+
 router.post('/:conversationId', validateMessageReq, async (req, res) => {
+  if (req.body && req.body.text) {
+    req.body.text = redactPII(req.body.text);
+  }
   try {
     const message = req.body;
     const savedMessage = await saveMessage(

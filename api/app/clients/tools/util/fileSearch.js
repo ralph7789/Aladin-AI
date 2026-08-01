@@ -93,6 +93,7 @@ const createFileSearchTool = async ({ userId, files, entity_id, fileCitations = 
       const createQueryBody = (file) => {
         const body = {
           file_id: file.file_id,
+          user_id: userId,
           query,
           k: 5,
         };

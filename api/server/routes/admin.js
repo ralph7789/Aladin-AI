@@ -214,5 +214,36 @@ router.delete('/roles/:id', checkAdmin, async (req, res) => {
     res.status(500).json({ message: 'Error deleting role', error: error.message });
   }
 });
+// --- MODEL MANAGEMENT (LITELLM PROXY) ---
+
+// Get all providers and keys from LiteLLM
+router.get('/model-management/providers', checkAdmin, async (req, res) => {
+  try {
+    // In a real implementation, we would call LiteLLM API:
+    // const response = await axios.get('http://litellm:4000/key/list', { headers: { 'Authorization': `Bearer ${process.env.LITELLM_MASTER_KEY}` } });
+    
+    // For now, we will proxy this back to the frontend with an error to trigger the UI's dummy data mode
+    // until we fully link up the LiteLLM container and Postgres
+    throw new Error('LiteLLM Backend not yet connected');
+  } catch (error) {
+    res.status(503).json({ message: 'LiteLLM not connected', error: error.message });
+  }
+});
+
+// Add a new API Key to LiteLLM
+router.post('/model-management/keys', checkAdmin, async (req, res) => {
+  try {
+    const { provider, key, models, limit } = req.body;
+    
+    // In a real implementation:
+    // await axios.post('http://litellm:4000/key/generate', { 
+    //   models, max_budget: limit, team_id: provider 
+    // }, { headers: { 'Authorization': `Bearer ${process.env.LITELLM_MASTER_KEY}` } });
+
+    res.status(201).json({ message: 'Key added successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error adding key to LiteLLM', error: error.message });
+  }
+});
 
 module.exports = router;

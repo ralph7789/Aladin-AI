@@ -256,7 +256,7 @@ endpoints:
           HTTP-Referer: 'https://aladin.ai'
           X-Title: 'Aladin'
       models:
-        default: []
+        default: ['openrouter/auto']
         fetch: true
       userProvide: true
       titleConvo: true

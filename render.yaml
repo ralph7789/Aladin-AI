@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: aladin-api
+    env: image
+    image:
+      url: ghcr.io/ralph7789/aladin-api:dev
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3080
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: MEILI_NO_ANALYTICS
+        value: true
+      - key: SEARCH
+        value: true

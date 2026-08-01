@@ -216,7 +216,7 @@ const deleteLocalFile = async (req, file) => {
         'Content-Type': 'application/json',
         accept: 'application/json',
       },
-      data: [file.file_id],
+      data: { file_id: file.file_id, user_id: req.user.id },
     });
   }
 

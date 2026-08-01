@@ -23,7 +23,7 @@ function createContextHandlers(req, userMessageContent) {
 
   const query = async (file) => {
     if (useFullContext) {
-      return axios.get(`${process.env.RAG_API_URL}/documents/${file.file_id}/context`, {
+      return axios.get(`${process.env.RAG_API_URL}/documents/${file.file_id}/context?user_id=${req.user.id}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
@@ -34,6 +34,7 @@ function createContextHandlers(req, userMessageContent) {
       `${process.env.RAG_API_URL}/query`,
       {
         file_id: file.file_id,
+        user_id: req.user.id,
         query: userMessageContent,
         k: 4,
       },
