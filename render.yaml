@@ -5,13 +5,13 @@ services:
     image:
       url: ghcr.io/ralph7789/aladin-api:dev
     plan: free
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3080
-      - key: MONGODB_URI
+      - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
         generateValue: true
