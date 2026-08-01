@@ -26,9 +26,9 @@ if os.getenv("OPENAI_API_KEY"):
     embeddings = OpenAIEmbeddings()
     COLLECTION_NAME = "aladin_documents_openai"
 else:
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    COLLECTION_NAME = "aladin_documents_local"
+    from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+    embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    COLLECTION_NAME = "aladin_documents_local_fastembed"
 
 vectorstore = PGVector(
     embeddings=embeddings,
