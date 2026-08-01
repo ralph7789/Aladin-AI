@@ -40,8 +40,8 @@ RUN \
 COPY --chown=node:node . .
 
 RUN \
-    # React client build
-    NODE_OPTIONS="--max-old-space-size=4096" npm run frontend; \
+    # Build backend packages but skip React client build
+    NODE_OPTIONS="--max-old-space-size=4096" npm run build:packages; \
     npm prune --production; \
     npm cache clean --force
 
