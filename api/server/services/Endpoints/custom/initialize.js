@@ -49,6 +49,30 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
   let apiKey = userProvidesKey ? userValues?.apiKey : CUSTOM_API_KEY;
   let baseURL = userProvidesURL ? userValues?.baseURL : CUSTOM_BASE_URL;
 
+  // --- Admin Fallback Logic ---
+  try {
+    const mongoose = require('mongoose');
+    const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
+    const { decrypt } = require('@aladin/api');
+    
+    const requestedModel = endpointOption?.modelOptions?.model || req.body.model;
+    const fallbackKey = await AdminKey.findOne({ 
+      isFallback: true, 
+      isActive: true 
+    }).lean();
+    
+    if (fallbackKey && (!fallbackKey.models || fallbackKey.models.length === 0 || fallbackKey.models.includes(requestedModel))) {
+      apiKey = await decrypt(fallbackKey.key);
+      if (fallbackKey.baseURL) {
+         baseURL = fallbackKey.baseURL;
+      }
+      console.log(`[CustomEndpoint] Bypassing Proxy: Using MongoDB Fallback Key for provider ${fallbackKey.provider}`);
+    }
+  } catch (err) {
+    console.error('[CustomEndpoint] Error checking AdminKey fallback:', err);
+  }
+  // ----------------------------
+
   if (userProvidesKey & !apiKey) {
     throw new Error(
       JSON.stringify({

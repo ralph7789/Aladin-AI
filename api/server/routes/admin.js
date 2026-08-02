@@ -286,23 +286,67 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
 // Add a new API Key to LiteLLM
 router.post('/model-management/keys', checkAdmin, async (req, res) => {
   try {
-    const { provider, key, models, limit } = req.body;
+    const { provider, key, models, limit, baseURL = '' } = req.body;
     const { host, key: masterKey } = getLiteLLMConfig();
+    const { encrypt } = require('@aladin/api');
     
-    // Generate key in LiteLLM (LiteLLM uses the key parameter as aliases in some versions, or we just generate a new one)
-    const response = await axios.post(`${host}/key/generate`, { 
-      models: models, 
-      max_budget: limit, 
-      team_id: provider,
-      aliases: { "key_value": key } // LiteLLM doesn't easily let you BYOK without special config, we store it in aliases/metadata if needed, or pass it if BYOK is supported.
-    }, { 
-      headers: { 'Authorization': `Bearer ${masterKey}` } 
-    });
+    // Fallback: Save to MongoDB AdminKey securely
+    const AdminKey = mongoose.models.AdminKey || require('../../models/AdminKey').AdminKey;
+    const encryptedKey = await encrypt(key);
+    
+    await AdminKey.findOneAndUpdate(
+      { provider, key: encryptedKey },
+      { provider, key: encryptedKey, models, limit, baseURL },
+      { upsert: true, new: true }
+    );
+    
+    let liteLLMData = null;
+    try {
+      // Generate key in LiteLLM
+      const response = await axios.post(`${host}/key/generate`, { 
+        models: models, 
+        max_budget: limit, 
+        team_id: provider,
+        aliases: { "key_value": key }
+      }, { 
+        headers: { 'Authorization': `Bearer ${masterKey}` } 
+      });
+      liteLLMData = response.data;
+    } catch (liteError) {
+      console.warn('[AdminAPI] LiteLLM Error adding key (Fallback saved to MongoDB):', liteError.response?.data || liteError.message);
+      // We don't throw here so we can still return a 201 because it was saved to DB
+    }
 
-    res.status(201).json({ message: 'Key added successfully', data: response.data });
+    res.status(201).json({ 
+      message: 'Key added successfully to fallback DB' + (liteLLMData ? ' and LiteLLM' : ' (LiteLLM unavailable)'), 
+      data: liteLLMData 
+    });
   } catch (error) {
-    console.error('[AdminAPI] LiteLLM Error adding key:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Error adding key to LiteLLM', error: error.message });
+    console.error('[AdminAPI] Error adding admin key:', error);
+    res.status(500).json({ message: 'Error adding key to database', error: error.message });
+  }
+});
+
+// Toggle fallback status for an Admin Key
+router.post('/model-management/keys/fallback', checkAdmin, async (req, res) => {
+  try {
+    const { provider, isFallback } = req.body;
+    const AdminKey = mongoose.models.AdminKey || require('../../models/AdminKey').AdminKey;
+    
+    const key = await AdminKey.findOneAndUpdate(
+      { provider },
+      { isFallback },
+      { new: true }
+    );
+    
+    if (!key) {
+      return res.status(404).json({ message: 'Key not found in MongoDB' });
+    }
+    
+    res.status(200).json({ message: 'Fallback status updated', data: key });
+  } catch (error) {
+    console.error('[AdminAPI] Error toggling fallback:', error);
+    res.status(500).json({ message: 'Error updating fallback status', error: error.message });
   }
 });
 
