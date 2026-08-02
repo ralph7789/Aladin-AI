@@ -27,6 +27,9 @@ function createContextHandlers(req, userMessageContent) {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
+      }).catch(err => {
+        logger.error(`Error querying full context for file ${file.file_id}:`, err.message);
+        return { data: '' };
       });
     }
 
@@ -44,7 +47,10 @@ function createContextHandlers(req, userMessageContent) {
           'Content-Type': 'application/json',
         },
       },
-    );
+    ).catch(err => {
+      logger.error(`Error querying context for file ${file.file_id}:`, err.message);
+      return { data: [] };
+    });
   };
 
   const processFile = async (file) => {

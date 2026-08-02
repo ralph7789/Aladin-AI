@@ -48,10 +48,14 @@ router.post('/users', checkAdmin, async (req, res) => {
       return res.status(409).json({ message: 'User already exists' });
     }
 
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = await User.create({
       username,
       email,
-      password, // Pre-save hook hashes this usually, or we use bcrypt here if not
+      password: hashedPassword,
       role: role || 'USER',
       license,
       emailVerified: true,
