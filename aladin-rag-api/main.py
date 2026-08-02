@@ -13,22 +13,26 @@ from langchain_postgres.vectorstores import PGVector
 app = FastAPI()
 
 # PostgreSQL VectorDB Connection String
-DB_HOST = os.getenv("DB_HOST", "vectordb")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("POSTGRES_DB", "mydatabase")
+import urllib.parse
+
 DB_USER = os.getenv("POSTGRES_USER", "myuser")
 DB_PASS = os.getenv("POSTGRES_PASSWORD", "mypassword")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("POSTGRES_DB", "mydb")
 
-CONNECTION_STRING = f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# URL encode the password to handle special characters
+encoded_pass = urllib.parse.quote_plus(DB_PASS)
+CONNECTION_STRING = f"postgresql+psycopg://{DB_USER}:{encoded_pass}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Initialize Embeddings & use separate collections to avoid dimension mismatch
 if os.getenv("OPENAI_API_KEY"):
     embeddings = OpenAIEmbeddings()
     COLLECTION_NAME = "aladin_documents_openai"
 else:
-    from langchain_community.embeddings import HuggingFaceEmbeddings
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    COLLECTION_NAME = "aladin_documents_local"
+    from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+    embeddings = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    COLLECTION_NAME = "aladin_documents_local_fastembed"
 
 vectorstore = PGVector(
     embeddings=embeddings,

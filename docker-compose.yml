@@ -20,7 +20,6 @@ services:
     environment:
       - HOST=0.0.0.0
       - MONGO_URI=mongodb://admin:AdminChangeMe@mongodb:27017/Aladin?authSource=admin
-      - MEILI_HOST=http://meilisearch:7700
       - RAG_PORT=${RAG_PORT:-8000}
       - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
     volumes:
@@ -41,16 +40,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     command: mongod --wiredTigerCacheSizeGB 0.5
-  meilisearch:
-    container_name: aladin-meilisearch
-    image: getmeili/meilisearch:v1.12.3
-    restart: always
-    environment:
-      - MEILI_HOST=http://meilisearch:7700
-      - MEILI_NO_ANALYTICS=true
-      - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-ChangeMe}
-    volumes:
-      - meilisearch_data:/meili_data
+
   vectordb:
     container_name: vectordb
     image: pgvector/pgvector:0.8.0-pg15-trixie
@@ -91,7 +81,6 @@ services:
 volumes:
   pgdata2:
   mongodb_data:
-  meilisearch_data:
   images_data:
   uploads_data:
   logs_data:

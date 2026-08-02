@@ -226,6 +226,16 @@ endpoints:
   #   # (optional) Agent Capabilities available to all users. Omit the ones you wish to exclude. Defaults to list below.
   #   capabilities: ["execute_code", "file_search", "actions", "tools"]
   custom:
+    - name: 'LiteLLM_Proxy'
+      apiKey: '${LITELLM_MASTER_KEY}'
+      baseURL: '${LITELLM_HOST}'
+      models:
+        default: ['auto']
+        fetch: true
+      titleConvo: true
+      titleModel: 'current_model'
+      modelDisplayLabel: 'Dynamic Models (LiteLLM)'
+      
     - name: 'Free_Models'
       apiKey: '${OPENROUTER_KEY}'
       baseURL: 'https://openrouter.ai/api/v1'

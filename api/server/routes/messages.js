@@ -58,9 +58,11 @@ router.get('/', async (req, res) => {
       const nextCursor = messages.length > pageSize ? messages.pop()[sortField] : null;
       response = { messages, nextCursor };
     } else if (search) {
-      const searchResults = await Message.meiliSearch(search, { filter: `user = "${user}"` }, true);
-
-      const messages = searchResults.hits || [];
+      // Fallback: Using native MongoDB search since Meilisearch container is removed
+      const messages = await Message.find({
+        user: user,
+        text: { $regex: search, $options: 'i' }
+      }).limit(50).lean();
 
       const result = await getConvosQueried(req.user.id, messages, cursor);
 
