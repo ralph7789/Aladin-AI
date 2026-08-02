@@ -29,8 +29,12 @@ export default function ModelManagementPage() {
   // Form State
   const [newKeyProvider, setNewKeyProvider] = useState('Zai Org');
   const [newKey, setNewKey] = useState('');
-  const [newKeyModels, setNewKeyModels] = useState('glm, llama-3');
+  const [newKeyModels, setNewKeyModels] = useState<string[]>([]);
   const [newKeyLimit, setNewKeyLimit] = useState(1000000);
+  const [newKeyBaseURL, setNewKeyBaseURL] = useState('https://api.cerebras.ai/v1');
+  const [isValidating, setIsValidating] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [validationSuccess, setValidationSuccess] = useState(false);
 
   useEffect(() => {
     fetchProviders();
@@ -96,20 +100,54 @@ export default function ModelManagementPage() {
     }
   };
 
+  const handleValidateKey = async () => {
+    if (!newKey || !newKeyBaseURL) {
+      alert('Please enter an API Key and Base URL first.');
+      return;
+    }
+    setIsValidating(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post('/api/admin/model-management/validate', {
+        key: newKey,
+        baseURL: newKeyBaseURL
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAvailableModels(res.data.models);
+      setValidationSuccess(true);
+      // Select all fetched models by default
+      setNewKeyModels(res.data.models);
+    } catch (error) {
+      console.error('Validation failed', error);
+      alert('Failed to validate key or fetch models. Please check your Key and Base URL.');
+      setValidationSuccess(false);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newKeyModels.length === 0) {
+      alert('Please select at least one model.');
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       await axios.post('/api/admin/model-management/keys', {
         provider: newKeyProvider,
         key: newKey,
-        models: newKeyModels.split(',').map(s => s.trim()),
-        limit: newKeyLimit
+        models: newKeyModels,
+        limit: newKeyLimit,
+        baseURL: newKeyBaseURL
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowAddModal(false);
       setNewKey('');
+      setValidationSuccess(false);
+      setAvailableModels([]);
       fetchProviders();
     } catch (error) {
       console.error('Failed to add key', error);
@@ -257,34 +295,78 @@ export default function ModelManagementPage() {
                   value={newKeyProvider}
                   onChange={(e) => setNewKeyProvider(e.target.value)}
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white"
-                  placeholder="e.g. Zai Org"
+                  placeholder="e.g. Cerebras"
                   required
+                  disabled={validationSuccess}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Base URL</label>
+                <input 
+                  type="url" 
+                  value={newKeyBaseURL}
+                  onChange={(e) => setNewKeyBaseURL(e.target.value)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white"
+                  placeholder="https://api.cerebras.ai/v1"
+                  required
+                  disabled={validationSuccess}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API Key</label>
-                <input 
-                  type="password" 
-                  value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white font-mono"
-                  placeholder="sk-..."
-                  required
-                />
+                <div className="flex gap-2">
+                  <input 
+                    type="password" 
+                    value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)}
+                    className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white font-mono"
+                    placeholder="sk-..."
+                    required
+                    disabled={validationSuccess}
+                  />
+                  {!validationSuccess && (
+                    <button 
+                      type="button" 
+                      onClick={handleValidateKey}
+                      disabled={isValidating || !newKey || !newKeyBaseURL}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium rounded-lg whitespace-nowrap"
+                    >
+                      {isValidating ? 'Validating...' : 'Validate'}
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {validationSuccess && availableModels.length > 0 && (
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mt-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                    <CheckCircle className="text-green-500" size={16} />
+                    Validation Successful! Select Allowed Models:
+                  </label>
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                    {availableModels.map(model => (
+                      <label key={model} className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors">
+                        <input 
+                          type="checkbox"
+                          checked={newKeyModels.includes(model)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNewKeyModels([...newKeyModels, model]);
+                            } else {
+                              setNewKeyModels(newKeyModels.filter(m => m !== model));
+                            }
+                          }}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{model}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Supported Models (comma separated)</label>
-                <input 
-                  type="text" 
-                  value={newKeyModels}
-                  onChange={(e) => setNewKeyModels(e.target.value)}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white"
-                  placeholder="glm, llama-3"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Token Budget Limit</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-4">Token Budget Limit</label>
                 <input 
                   type="number" 
                   value={newKeyLimit}
@@ -293,9 +375,11 @@ export default function ModelManagementPage() {
                   required
                 />
               </div>
-              <div className="pt-4 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Validate & Add Key</button>
+              <div className="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
+                {validationSuccess && (
+                  <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">Add Provider Key</button>
+                )}
               </div>
             </form>
           </div>

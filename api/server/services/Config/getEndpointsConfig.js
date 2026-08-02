@@ -97,6 +97,25 @@ async function getEndpointsConfig(req) {
     };
   }
 
+  // --- Inject Custom Endpoint for Fallback Models ---
+  try {
+    const mongoose = require('mongoose');
+    const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
+    const fallbackKeys = await AdminKey.find({ isFallback: true, isActive: true }).lean();
+    if (fallbackKeys.length > 0) {
+      if (!mergedConfig['custom']) {
+        mergedConfig['custom'] = {
+          type: 'custom',
+          userProvide: false,
+          userProvideURL: false,
+          modelDisplayLabel: 'Admin Models',
+        };
+      }
+    }
+  } catch (err) {
+    console.error('Error injecting custom endpoint for fallback:', err);
+  }
+
   const endpointsConfig = orderEndpointsConfig(mergedConfig);
 
   await cache.set(CacheKeys.ENDPOINT_CONFIG, endpointsConfig);

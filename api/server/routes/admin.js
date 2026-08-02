@@ -232,6 +232,28 @@ const getLiteLLMConfig = () => {
   return { host, key };
 };
 
+// Validate an API Key and fetch available models
+router.post('/model-management/validate', checkAdmin, async (req, res) => {
+  try {
+    const { key, baseURL } = req.body;
+    if (!key || !baseURL) {
+      return res.status(400).json({ message: 'Key and baseURL are required' });
+    }
+    
+    // Call the provider's /models endpoint to validate and fetch available models
+    const axios = require('axios');
+    const response = await axios.get(`${baseURL.replace(/\/$/, '')}/models`, {
+      headers: { Authorization: `Bearer ${key}` }
+    });
+    
+    const models = response.data.data.map(m => m.id);
+    res.json({ message: 'Valid API Key', models });
+  } catch (error) {
+    console.error('[AdminAPI] Validation Error:', error.response?.data || error.message);
+    res.status(400).json({ message: 'Failed to validate API Key or fetch models', error: error.message });
+  }
+});
+
 // Get all providers and keys from LiteLLM
 router.get('/model-management/providers', checkAdmin, async (req, res) => {
   try {
