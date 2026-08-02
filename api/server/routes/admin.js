@@ -214,19 +214,68 @@ router.delete('/roles/:id', checkAdmin, async (req, res) => {
     res.status(500).json({ message: 'Error deleting role', error: error.message });
   }
 });
+const axios = require('axios');
+
+// ... existing code in admin.js ...
+
 // --- MODEL MANAGEMENT (LITELLM PROXY) ---
+
+// Helper to get LiteLLM host and key
+const getLiteLLMConfig = () => {
+  const host = process.env.LITELLM_HOST || 'http://localhost:4000';
+  const key = process.env.LITELLM_MASTER_KEY;
+  if (!key) throw new Error('LITELLM_MASTER_KEY is not defined in environment');
+  return { host, key };
+};
 
 // Get all providers and keys from LiteLLM
 router.get('/model-management/providers', checkAdmin, async (req, res) => {
   try {
-    // In a real implementation, we would call LiteLLM API:
-    // const response = await axios.get('http://litellm:4000/key/list', { headers: { 'Authorization': `Bearer ${process.env.LITELLM_MASTER_KEY}` } });
+    const { host, key } = getLiteLLMConfig();
     
-    // For now, we will proxy this back to the frontend with an error to trigger the UI's dummy data mode
-    // until we fully link up the LiteLLM container and Postgres
-    throw new Error('LiteLLM Backend not yet connected');
+    // Call LiteLLM API to get all keys (we will group them by team_id which acts as provider name)
+    const response = await axios.get(`${host}/key/info`, { 
+      headers: { 'Authorization': `Bearer ${key}` } 
+    });
+    
+    const keys = response.data?.keys || [];
+    
+    // Group keys by team_id (which we use as provider name)
+    const providersMap = {};
+    
+    for (const k of keys) {
+      const providerName = k.team_id || 'Default Provider';
+      if (!providersMap[providerName]) {
+        providersMap[providerName] = {
+          name: providerName,
+          isActive: true,
+          aggregateTokensLimit: 0,
+          aggregateTokensUsed: 0,
+          keys: []
+        };
+      }
+      
+      const tokensUsed = Number(k.spend) || 0;
+      const tokenLimit = Number(k.max_budget) || 1000000;
+      
+      providersMap[providerName].aggregateTokensLimit += tokenLimit;
+      providersMap[providerName].aggregateTokensUsed += tokensUsed;
+      
+      providersMap[providerName].keys.push({
+        _id: k.token,
+        key_name: k.key_alias || `${providerName}-Key`,
+        key: k.token,
+        status: tokensUsed >= tokenLimit ? 'exhausted' : 'active',
+        supportedModels: k.models || ['all'],
+        tokenLimit: tokenLimit,
+        tokensUsed: tokensUsed
+      });
+    }
+    
+    res.json(Object.values(providersMap));
   } catch (error) {
-    res.status(503).json({ message: 'LiteLLM not connected', error: error.message });
+    console.error('[AdminAPI] LiteLLM Error:', error.response?.data || error.message);
+    res.status(503).json({ message: 'LiteLLM not connected or error fetching keys', error: error.message });
   }
 });
 
@@ -234,14 +283,21 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
 router.post('/model-management/keys', checkAdmin, async (req, res) => {
   try {
     const { provider, key, models, limit } = req.body;
+    const { host, key: masterKey } = getLiteLLMConfig();
     
-    // In a real implementation:
-    // await axios.post('http://litellm:4000/key/generate', { 
-    //   models, max_budget: limit, team_id: provider 
-    // }, { headers: { 'Authorization': `Bearer ${process.env.LITELLM_MASTER_KEY}` } });
+    // Generate key in LiteLLM (LiteLLM uses the key parameter as aliases in some versions, or we just generate a new one)
+    const response = await axios.post(`${host}/key/generate`, { 
+      models: models, 
+      max_budget: limit, 
+      team_id: provider,
+      aliases: { "key_value": key } // LiteLLM doesn't easily let you BYOK without special config, we store it in aliases/metadata if needed, or pass it if BYOK is supported.
+    }, { 
+      headers: { 'Authorization': `Bearer ${masterKey}` } 
+    });
 
-    res.status(201).json({ message: 'Key added successfully' });
+    res.status(201).json({ message: 'Key added successfully', data: response.data });
   } catch (error) {
+    console.error('[AdminAPI] LiteLLM Error adding key:', error.response?.data || error.message);
     res.status(500).json({ message: 'Error adding key to LiteLLM', error: error.message });
   }
 });

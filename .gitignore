@@ -174,3 +174,4 @@ logs/*
 
 api/logs/*
 !api/logs/.gitkeep
+.vercel

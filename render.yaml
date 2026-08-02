@@ -21,3 +21,28 @@ services:
         value: true
       - key: SEARCH
         value: true
+      - key: LITELLM_HOST
+        fromService:
+          type: web
+          name: litellm-proxy
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LITELLM_MASTER_KEY
+        fromService:
+          type: web
+          name: litellm-proxy
+          envVarKey: LITELLM_MASTER_KEY
+
+  - type: web
+    name: litellm-proxy
+    env: image
+    image:
+      url: ghcr.io/berriai/litellm:main-latest
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://postgres.lllftazvjbfrtakmauxe:AladinRagDB2026@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres
+      - key: LITELLM_MASTER_KEY
+        generateValue: true
+      - key: PORT
+        value: 4000
