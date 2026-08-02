@@ -38,8 +38,10 @@ export default function ModelManagementPage() {
 
   const fetchProviders = async () => {
     try {
-      // Proxy to our backend which talks to LiteLLM
-      const res = await axios.get('/api/admin/model-management/providers');
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/admin/model-management/providers', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setProviders(res.data);
     } catch (error) {
       console.error('Error fetching providers:', error);
@@ -97,11 +99,14 @@ export default function ModelManagementPage() {
   const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
       await axios.post('/api/admin/model-management/keys', {
         provider: newKeyProvider,
         key: newKey,
         models: newKeyModels.split(',').map(s => s.trim()),
         limit: newKeyLimit
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       setShowAddModal(false);
       setNewKey('');
