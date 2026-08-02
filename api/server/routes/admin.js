@@ -279,7 +279,39 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
     res.json(Object.values(providersMap));
   } catch (error) {
     console.error('[AdminAPI] LiteLLM Error:', error.response?.data || error.message);
-    res.status(503).json({ message: 'LiteLLM not connected or error fetching keys', error: error.message });
+    
+    try {
+      const AdminKey = mongoose.models.AdminKey || require('../../models/AdminKey').AdminKey;
+      const fallbackKeys = await AdminKey.find({}).lean();
+      
+      const providersMap = {};
+      for (const k of fallbackKeys) {
+        const providerName = k.provider || 'Fallback Provider';
+        if (!providersMap[providerName]) {
+          providersMap[providerName] = {
+            name: providerName,
+            isActive: k.isFallback,
+            aggregateTokensLimit: 0,
+            aggregateTokensUsed: 0,
+            keys: []
+          };
+        }
+        
+        providersMap[providerName].aggregateTokensLimit += k.limit || 1000000;
+        providersMap[providerName].keys.push({
+          _id: k._id.toString(),
+          key_name: `${providerName}-Fallback-Key`,
+          key: k.key,
+          status: 'active',
+          supportedModels: k.models || ['all'],
+          tokenLimit: k.limit || 1000000,
+          tokensUsed: 0
+        });
+      }
+      return res.json(Object.values(providersMap));
+    } catch (fallbackError) {
+      return res.status(503).json({ message: 'LiteLLM not connected and DB fallback failed', error: error.message });
+    }
   }
 });
 
