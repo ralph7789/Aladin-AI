@@ -36,18 +36,20 @@ async function loadModels(req) {
   try {
     const mongoose = require('mongoose');
     const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
-    const fallbackKeys = await AdminKey.find({ isFallback: true, isActive: true }).lean();
-    
-    if (fallbackKeys.length > 0) {
-      if (!modelConfig.custom) {
-        modelConfig.custom = [];
-      }
-      for (const k of fallbackKeys) {
-        if (k.models && Array.isArray(k.models)) {
-          // Push models that aren't already in the list
-          for (const m of k.models) {
-            if (!modelConfig.custom.includes(m)) {
-              modelConfig.custom.push(m);
+    if (AdminKey) {
+      const fallbackKeys = await AdminKey.find({ isActive: true }).lean();
+      
+      if (fallbackKeys.length > 0) {
+        if (!modelConfig.custom) {
+          modelConfig.custom = [];
+        }
+        for (const k of fallbackKeys) {
+          if (k.models && Array.isArray(k.models)) {
+            // Push models that aren't already in the list
+            for (const m of k.models) {
+              if (!modelConfig.custom.includes(m)) {
+                modelConfig.custom.push(m);
+              }
             }
           }
         }

@@ -42,10 +42,7 @@ export default function ModelManagementPage() {
 
   const fetchProviders = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/admin/model-management/providers', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get('/api/admin/model-management/providers');
       setProviders(res.data);
     } catch (error) {
       console.error('Error fetching providers:', error);
@@ -107,12 +104,9 @@ export default function ModelManagementPage() {
     }
     setIsValidating(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await axios.post('/api/admin/model-management/validate', {
         key: newKey,
         baseURL: newKeyBaseURL
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setAvailableModels(res.data.models);
       setValidationSuccess(true);
@@ -134,15 +128,12 @@ export default function ModelManagementPage() {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
       await axios.post('/api/admin/model-management/keys', {
         provider: newKeyProvider,
         key: newKey,
         models: newKeyModels,
         limit: newKeyLimit,
         baseURL: newKeyBaseURL
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       setShowAddModal(false);
       setNewKey('');

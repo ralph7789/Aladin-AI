@@ -101,7 +101,7 @@ async function getEndpointsConfig(req) {
   try {
     const mongoose = require('mongoose');
     const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
-    const fallbackKeys = await AdminKey.find({ isFallback: true, isActive: true }).lean();
+    const fallbackKeys = await AdminKey.find({ isActive: true }).lean();
     if (fallbackKeys.length > 0) {
       if (!mergedConfig['custom']) {
         mergedConfig['custom'] = {

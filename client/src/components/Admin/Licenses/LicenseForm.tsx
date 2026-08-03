@@ -29,10 +29,7 @@ export default function LicenseForm({
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('/api/admin/model-management/providers', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await axios.get('/api/admin/model-management/providers');
         const models = new Set<string>();
         models.add('*');
         res.data.forEach((provider: any) => {
