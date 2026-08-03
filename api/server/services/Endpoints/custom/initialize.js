@@ -56,10 +56,9 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
     const { decrypt } = require('@aladin/api');
     
     const requestedModel = endpointOption?.modelOptions?.model || req.body.model;
-    const fallbackKey = await AdminKey.findOne({ 
-      isFallback: true, 
-      isActive: true 
-    }).lean();
+    const fallbackKeys = await AdminKey.find({ isActive: true }).lean();
+    
+    const fallbackKey = fallbackKeys.find(k => !k.models || k.models.length === 0 || k.models.includes(requestedModel));
     
     if (fallbackKey && (!fallbackKey.models || fallbackKey.models.length === 0 || fallbackKey.models.includes(requestedModel))) {
       apiKey = await decrypt(fallbackKey.key);
