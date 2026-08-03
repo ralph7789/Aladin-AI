@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import RoleForm from './RoleForm';
 
 export default function RolesPage() {
@@ -14,8 +14,8 @@ export default function RolesPage() {
 
   const fetchRoles = async () => {
     try {
-      const res = await axios.get('/api/admin/roles');
-      setRoles(res.data);
+      const data: any = await request.get('/api/admin/roles');
+      setRoles(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -36,7 +36,7 @@ export default function RolesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this role?')) return;
     try {
-      await axios.delete(`/api/admin/roles/${id}`);
+      await request.delete(`/api/admin/roles/${id}`);
       fetchRoles();
     } catch (err) {
       alert('Error deleting role');

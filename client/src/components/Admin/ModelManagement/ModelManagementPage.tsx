@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Server, Key, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import axios from 'axios';
-
+import { request } from 'aladin-data-provider';
 interface ApiKey {
   _id: string;
   key_name: string;
@@ -42,8 +41,8 @@ export default function ModelManagementPage() {
 
   const fetchProviders = async () => {
     try {
-      const res = await axios.get('/api/admin/model-management/providers');
-      setProviders(res.data);
+      const data: any = await request.get('/api/admin/model-management/providers');
+      setProviders(data);
     } catch (error) {
       console.error('Error fetching providers:', error);
       // Fallback dummy data for visualization before backend is fully hooked up
@@ -104,14 +103,14 @@ export default function ModelManagementPage() {
     }
     setIsValidating(true);
     try {
-      const res = await axios.post('/api/admin/model-management/validate', {
+      const data: any = await request.post('/api/admin/model-management/validate', {
         key: newKey,
         baseURL: newKeyBaseURL
       });
-      setAvailableModels(res.data.models);
+      setAvailableModels(data.models);
       setValidationSuccess(true);
       // Select all fetched models by default
-      setNewKeyModels(res.data.models);
+      setNewKeyModels(data.models);
     } catch (error) {
       console.error('Validation failed', error);
       alert('Failed to validate key or fetch models. Please check your Key and Base URL.');
@@ -128,7 +127,7 @@ export default function ModelManagementPage() {
       return;
     }
     try {
-      await axios.post('/api/admin/model-management/keys', {
+      await request.post('/api/admin/model-management/keys', {
         provider: newKeyProvider,
         key: newKey,
         models: newKeyModels,

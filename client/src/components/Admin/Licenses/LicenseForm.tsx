@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
@@ -29,10 +29,10 @@ export default function LicenseForm({
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const res = await axios.get('/api/admin/model-management/providers');
+        const data: any = await request.get('/api/admin/model-management/providers');
         const models = new Set<string>();
         models.add('*');
-        res.data.forEach((provider: any) => {
+        data.forEach((provider: any) => {
           provider.keys.forEach((key: any) => {
             key.supportedModels.forEach((m: string) => models.add(m));
           });
@@ -79,9 +79,9 @@ export default function LicenseForm({
       };
 
       if (license) {
-        await axios.put(`/api/admin/licenses/${license._id}`, payload);
+        await request.put(`/api/admin/licenses/${license._id}`, payload);
       } else {
-        await axios.post('/api/admin/licenses', payload);
+        await request.post('/api/admin/licenses', payload);
       }
       onSave();
       onClose();

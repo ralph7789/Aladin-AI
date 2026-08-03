@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
@@ -92,9 +92,9 @@ export default function RoleForm({
       };
 
       if (role) {
-        await axios.put(`/api/admin/roles/${role._id}`, payload);
+        await request.put(`/api/admin/roles/${role._id}`, payload);
       } else {
-        await axios.post('/api/admin/roles', payload);
+        await request.post('/api/admin/roles', payload);
       }
       onSave();
       onClose();
