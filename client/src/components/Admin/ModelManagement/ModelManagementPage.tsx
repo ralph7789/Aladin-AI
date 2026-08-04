@@ -374,15 +374,48 @@ export default function ModelManagementPage() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-4">Token Budget Limit</label>
+              <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700 mt-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Global Token Budget Limit</label>
                 <input 
                   type="number" 
                   value={newKeyLimit}
                   onChange={(e) => setNewKeyLimit(Number(e.target.value))}
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white"
                   required
+                  min="0"
                 />
+                
+                {validationSuccess && newKeyModels.length > 0 && (
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Auto-Populated Per-Model Quota Distribution:
+                    </label>
+                    <div className="space-y-4">
+                      {newKeyModels.map((model, index) => {
+                        const quota = Math.floor(newKeyLimit / newKeyModels.length);
+                        return (
+                          <div key={model} className="relative pt-1">
+                            <div className="flex mb-2 items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 dark:bg-indigo-900 dark:text-indigo-200">
+                                  {index + 1}. {model}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs font-semibold inline-block text-indigo-600 dark:text-indigo-400">
+                                  {quota.toLocaleString()} Tokens
+                                </span>
+                              </div>
+                            </div>
+                            <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-lg bg-indigo-200 dark:bg-gray-700">
+                              <div style={{ width: "100%" }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
