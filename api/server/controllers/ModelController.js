@@ -54,9 +54,9 @@ async function loadModels(req) {
       } else if (keys && keys.length > 0) {
         for (const k of keys) {
           if (k.models && Array.isArray(k.models)) {
-            // Inject models into the universally recognized 'custom' endpoint 
-            // so the frontend UI actually renders them in the dropdown!
-            const endpoint = 'custom';
+            // Inject models into the universally recognized 'openAI' endpoint 
+            // because 'custom' is overridden by aladin.yaml's array config and won't show up.
+            const endpoint = 'openAI';
             if (!modelConfig[endpoint]) {
               modelConfig[endpoint] = [];
             }
