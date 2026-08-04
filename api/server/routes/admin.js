@@ -310,7 +310,7 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
       if (!supabase) throw new Error('Supabase client not initialized');
       // Fetch from Supabase as fallback
       const { data: fallbackKeys, error: dbError } = await supabase
-        .from('Admin_API_Keys')
+        .from('admin_api_keys')
         .select('*');
         
       if (dbError) throw dbError;
@@ -379,10 +379,10 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
 
     const encryptedKey = await encrypt(key);
     
-    // 2. Save to Supabase Admin_API_Keys
+    // 2. Save to Supabase admin_api_keys
     if (supabase) {
       const { error: insertError } = await supabase
-        .from('Admin_API_Keys')
+        .from('admin_api_keys')
         .upsert({ 
           provider, 
           key_alias: `${provider}-Key`,
