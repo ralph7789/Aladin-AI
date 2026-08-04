@@ -29,7 +29,7 @@ export default function ModelManagementPage() {
   const [newKeyProvider, setNewKeyProvider] = useState('Zai Org');
   const [newKey, setNewKey] = useState('');
   const [newKeyModels, setNewKeyModels] = useState<string[]>([]);
-  const [newKeyLimit, setNewKeyLimit] = useState(1000000);
+  const [newKeyModelLimits, setNewKeyModelLimits] = useState<Record<string, number>>({});
   const [newKeyBaseURL, setNewKeyBaseURL] = useState('https://api.cerebras.ai/v1');
   const [isValidating, setIsValidating] = useState(false);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -115,6 +115,9 @@ export default function ModelManagementPage() {
       setValidationSuccess(true);
       // Select all fetched models by default
       setNewKeyModels(data.models);
+      const initialLimits: Record<string, number> = {};
+      data.models.forEach((m: string) => { initialLimits[m] = 1000000; });
+      setNewKeyModelLimits(initialLimits);
     } catch (error) {
       console.error('Validation failed', error);
       alert('Failed to validate key or fetch models. Please check your Key and Base URL.');
@@ -131,11 +134,12 @@ export default function ModelManagementPage() {
       return;
     }
     try {
+      const totalLimit = newKeyModels.reduce((acc, curr) => acc + (newKeyModelLimits[curr] || 0), 0);
       await request.post('/api/admin/model-management/keys', {
         provider: newKeyProvider,
         key: newKey,
         models: newKeyModels,
-        limit: newKeyLimit,
+        limit: totalLimit,
         baseURL: newKeyBaseURL
       });
       setShowAddModal(false);
@@ -352,38 +356,47 @@ export default function ModelManagementPage() {
                     <CheckCircle className="text-green-500" size={16} />
                     Validation Successful! Select Allowed Models:
                   </label>
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+                  <div className="max-h-64 overflow-y-auto space-y-4 pr-2">
                     {availableModels.map(model => (
-                      <label key={model} className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer transition-colors">
-                        <input 
-                          type="checkbox"
-                          checked={newKeyModels.includes(model)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setNewKeyModels([...newKeyModels, model]);
-                            } else {
-                              setNewKeyModels(newKeyModels.filter(m => m !== model));
-                            }
-                          }}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{model}</span>
-                      </label>
+                      <div key={model} className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="checkbox"
+                            checked={newKeyModels.includes(model)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewKeyModels([...newKeyModels, model]);
+                              } else {
+                                setNewKeyModels(newKeyModels.filter(m => m !== model));
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          />
+                          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 font-mono">{model}</span>
+                        </label>
+                        {newKeyModels.includes(model) && (
+                          <div className="mt-3 pl-7">
+                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                              <span>Quota Limit</span>
+                              <span className="font-mono">{newKeyModelLimits[model]?.toLocaleString() || 0}</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="10000000" 
+                              step="50000"
+                              value={newKeyModelLimits[model] || 0}
+                              onChange={(e) => setNewKeyModelLimits({ ...newKeyModelLimits, [model]: Number(e.target.value) })}
+                              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-indigo-600"
+                            />
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 mt-4">Token Budget Limit</label>
-                <input 
-                  type="number" 
-                  value={newKeyLimit}
-                  onChange={(e) => setNewKeyLimit(Number(e.target.value))}
-                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-800 dark:text-white"
-                  required
-                />
-              </div>
               <div className="pt-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">Cancel</button>
                 {validationSuccess && (
