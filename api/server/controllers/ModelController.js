@@ -41,7 +41,7 @@ async function loadModels(req) {
     if (supabaseUrl && supabaseKey) {
       const supabase = createClient(supabaseUrl, supabaseKey);
       const { data: keys, error } = await supabase
-        .from('Admin_API_Keys')
+        .from('admin_api_keys')
         .select('*')
         .eq('is_active', true);
         
