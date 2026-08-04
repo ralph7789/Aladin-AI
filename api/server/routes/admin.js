@@ -225,8 +225,12 @@ const { getLogStores } = require('../../cache');
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const WebSocket = require('ws');
 // Initialize Supabase only if URL and key are provided
-const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false },
+  realtime: { transport: WebSocket }
+}) : null;
 
 // Helper to get LiteLLM host and key
 const getLiteLLMConfig = () => {

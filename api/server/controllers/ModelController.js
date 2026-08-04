@@ -39,7 +39,11 @@ async function loadModels(req) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
     
     if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      const WebSocket = require('ws');
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        realtime: { transport: WebSocket }
+      });
       const { data: keys, error } = await supabase
         .from('admin_api_keys')
         .select('*')
