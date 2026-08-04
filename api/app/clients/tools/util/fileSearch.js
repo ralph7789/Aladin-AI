@@ -112,6 +112,7 @@ const createFileSearchTool = async ({ userId, files, entity_id, fileCitations = 
               Authorization: `Bearer ${jwtToken}`,
               'Content-Type': 'application/json',
             },
+            timeout: 5000,
           })
           .catch((error) => {
             logger.error('Error encountered in `file_search` while querying file:', error);

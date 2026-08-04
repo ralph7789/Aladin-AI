@@ -43,54 +43,58 @@ export default function ModelManagementPage() {
     try {
       const data: any = await request.get('/api/admin/model-management/providers');
       setProviders(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching providers:', error);
-      // Fallback dummy data for visualization before backend is fully hooked up
-      setProviders([
-        {
-          name: 'Zai Org',
-          isActive: true,
-          aggregateTokensLimit: 5000000,
-          aggregateTokensUsed: 3500000,
-          keys: [
-            {
-              _id: '1',
-              key_name: 'Zai-Primary-1',
-              key: 'sk-zai-...',
-              status: 'active',
-              supportedModels: ['glm', 'glm-4'],
-              tokenLimit: 2500000,
-              tokensUsed: 1000000,
-            },
-            {
-              _id: '2',
-              key_name: 'Zai-Fallback',
-              key: 'sk-zai-...',
-              status: 'exhausted',
-              supportedModels: ['glm'],
-              tokenLimit: 2500000,
-              tokensUsed: 2500000,
-            }
-          ]
-        },
-        {
-          name: 'Cerebras',
-          isActive: true,
-          aggregateTokensLimit: 10000000,
-          aggregateTokensUsed: 1200000,
-          keys: [
-            {
-              _id: '3',
-              key_name: 'Cerebras-Main',
-              key: 'sk-cer-...',
-              status: 'active',
-              supportedModels: ['glm', 'llama-3'],
-              tokenLimit: 10000000,
-              tokensUsed: 1200000,
-            }
-          ]
-        }
-      ]);
+      // Fallback dummy data for visualization ONLY for hard 500 network failures
+      if (error.response?.status === 500 || error.message?.includes('500')) {
+        setProviders([
+          {
+            name: 'Zai Org',
+            isActive: true,
+            aggregateTokensLimit: 5000000,
+            aggregateTokensUsed: 3500000,
+            keys: [
+              {
+                _id: '1',
+                key_name: 'Zai-Primary-1',
+                key: 'sk-zai-...',
+                status: 'active',
+                supportedModels: ['glm', 'glm-4'],
+                tokenLimit: 2500000,
+                tokensUsed: 1000000,
+              },
+              {
+                _id: '2',
+                key_name: 'Zai-Fallback',
+                key: 'sk-zai-...',
+                status: 'exhausted',
+                supportedModels: ['glm'],
+                tokenLimit: 2500000,
+                tokensUsed: 2500000,
+              }
+            ]
+          },
+          {
+            name: 'Cerebras',
+            isActive: true,
+            aggregateTokensLimit: 10000000,
+            aggregateTokensUsed: 1200000,
+            keys: [
+              {
+                _id: '3',
+                key_name: 'Cerebras-Main',
+                key: 'sk-cer-...',
+                status: 'active',
+                supportedModels: ['glm', 'llama-3'],
+                tokenLimit: 10000000,
+                tokensUsed: 1200000,
+              }
+            ]
+          }
+        ]);
+      } else {
+        setProviders([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +182,20 @@ export default function ModelManagementPage() {
       </div>
 
       {/* Provider List */}
+      {providers.length === 0 ? (
+        <div className="bg-white dark:bg-gray-800 p-12 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-center">
+          <Server className="mx-auto text-gray-400 mb-4" size={48} />
+          <h3 className="text-xl font-medium text-gray-800 dark:text-white mb-2">No Providers Configured</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">You haven't added any API keys for model providers yet.</p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Plus size={18} />
+            Add First API Key
+          </button>
+        </div>
+      ) : (
       <div className="space-y-6">
         {providers.map((provider) => {
           const percentUsed = Math.min(100, (provider.aggregateTokensUsed / provider.aggregateTokensLimit) * 100);
@@ -268,6 +286,7 @@ export default function ModelManagementPage() {
           );
         })}
       </div>
+      )}
 
       {/* Add Key Modal */}
       {showAddModal && (

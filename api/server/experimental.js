@@ -248,7 +248,20 @@ if (cluster.isMaster) {
     app.use(express.urlencoded({ extended: true, limit: '3mb' }));
     app.use(handleJsonParseError);
     app.use(mongoSanitize());
-    app.use(cors());
+    const allowedOrigins = process.env.DOMAIN_CLIENT 
+      ? process.env.DOMAIN_CLIENT.split(',').map(origin => origin.trim()) 
+      : [];
+    
+    app.use(cors({
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true
+    }));
     app.use(cookieParser());
 
     if (!isEnabled(DISABLE_COMPRESSION)) {

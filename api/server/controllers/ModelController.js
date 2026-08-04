@@ -34,21 +34,30 @@ async function loadModels(req) {
   const modelConfig = { ...defaultModelsConfig, ...customModelsConfig };
 
   try {
-    const mongoose = require('mongoose');
-    const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
-    if (AdminKey) {
-      const fallbackKeys = await AdminKey.find({ isActive: true }).lean();
-      
-      if (fallbackKeys.length > 0) {
-        if (!modelConfig.custom) {
-          modelConfig.custom = [];
-        }
-        for (const k of fallbackKeys) {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+    
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: keys, error } = await supabase
+        .from('Admin_API_Keys')
+        .select('*')
+        .eq('is_active', true);
+        
+      if (error) {
+        logger.error('Supabase query error:', error);
+      } else if (keys && keys.length > 0) {
+        for (const k of keys) {
           if (k.models && Array.isArray(k.models)) {
-            // Push models that aren't already in the list
+            // Inject models into specific endpoint based on provider rather than generic 'custom'
+            const endpoint = (k.provider || 'custom').toLowerCase().replace(/\s+/g, '-');
+            if (!modelConfig[endpoint]) {
+              modelConfig[endpoint] = [];
+            }
             for (const m of k.models) {
-              if (!modelConfig.custom.includes(m)) {
-                modelConfig.custom.push(m);
+              if (!modelConfig[endpoint].includes(m)) {
+                modelConfig[endpoint].push(m);
               }
             }
           }
@@ -56,7 +65,7 @@ async function loadModels(req) {
       }
     }
   } catch (err) {
-    logger.error('Error injecting AdminKey fallback models:', err);
+    logger.error('Error injecting Supabase Admin_API_Keys models:', err);
   }
 
   await cache.set(CacheKeys.MODELS_CONFIG, modelConfig);

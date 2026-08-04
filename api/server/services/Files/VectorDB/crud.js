@@ -30,6 +30,7 @@ const deleteVectors = async (req, file) => {
         'Content-Type': 'application/json',
         accept: 'application/json',
       },
+      timeout: 5000,
       data: { file_id: file.file_id, user_id: req.user.id },
     });
   } catch (error) {
@@ -92,6 +93,7 @@ async function uploadVectors({ req, file, file_id, entity_id, storageMetadata })
         accept: 'application/json',
         ...formHeaders,
       },
+      timeout: 5000,
     });
 
     const responseData = response.data;

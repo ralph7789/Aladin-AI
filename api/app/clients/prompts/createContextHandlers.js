@@ -27,6 +27,7 @@ function createContextHandlers(req, userMessageContent) {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
+        timeout: 5000,
       }).catch(err => {
         logger.error(`Error querying full context for file ${file.file_id}:`, err.message);
         return { data: '' };
@@ -46,6 +47,7 @@ function createContextHandlers(req, userMessageContent) {
           Authorization: `Bearer ${jwtToken}`,
           'Content-Type': 'application/json',
         },
+        timeout: 5000,
       },
     ).catch(err => {
       logger.error(`Error querying context for file ${file.file_id}:`, err.message);

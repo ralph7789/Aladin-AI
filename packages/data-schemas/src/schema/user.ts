@@ -25,6 +25,12 @@ const BackupCodeSchema = new Schema(
 
 const userSchema = new Schema<IUser>(
   {
+    user_id: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     name: {
       type: String,
     },
@@ -62,10 +68,7 @@ const userSchema = new Schema<IUser>(
       required: true,
       default: 'local',
     },
-    role: {
-      type: String,
-      default: SystemRoles.USER,
-    },
+
     googleId: {
       type: String,
       unique: true,
@@ -141,11 +144,7 @@ const userSchema = new Schema<IUser>(
       },
       default: {},
     },
-    license: {
-      type: Schema.Types.ObjectId,
-      ref: 'License',
-      required: false,
-    },
+
     /** Field for external source identification (for consistency with TPrincipal schema) */
     idOnTheSource: {
       type: String,

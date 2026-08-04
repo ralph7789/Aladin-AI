@@ -139,5 +139,4 @@ module.exports = {
   Files: File,
   License: models.License,
   User: models.User,
-  AdminKey: require('./AdminKey').AdminKey,
 };
