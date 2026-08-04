@@ -264,7 +264,8 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
     let keys = [];
     if (key) {
       const response = await axios.get(`${host}/key/info`, { 
-        headers: { 'Authorization': `Bearer ${key}` } 
+        headers: { 'Authorization': `Bearer ${key}` },
+        timeout: 3000 
       });
       keys = response.data?.keys || [];
     }
@@ -356,14 +357,16 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
     let fetchedModels = [];
     try {
       const modelsResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/v1/models`, {
-        headers: { Authorization: `Bearer ${key}` }
+        headers: { Authorization: `Bearer ${key}` },
+        timeout: 5000
       });
       fetchedModels = modelsResponse.data?.data?.map(m => m.id) || [];
     } catch (fetchError) {
       console.warn('[AdminAPI] Could not auto-fetch models with /v1/models. Attempting /models fallback...');
       try {
         const fallbackResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/models`, {
-          headers: { Authorization: `Bearer ${key}` }
+          headers: { Authorization: `Bearer ${key}` },
+          timeout: 5000
         });
         fetchedModels = fallbackResponse.data?.data?.map(m => m.id) || [];
       } catch (fallbackErr) {
@@ -413,7 +416,8 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
           team_id: provider,
           aliases: { "key_value": key }
         }, { 
-          headers: { 'Authorization': `Bearer ${masterKey}` } 
+          headers: { 'Authorization': `Bearer ${masterKey}` },
+          timeout: 3000 
         });
         liteLLMData = response.data;
       }
