@@ -54,8 +54,9 @@ async function loadModels(req) {
       } else if (keys && keys.length > 0) {
         for (const k of keys) {
           if (k.models && Array.isArray(k.models)) {
-            // Inject models into specific endpoint based on provider rather than generic 'custom'
-            const endpoint = (k.provider || 'custom').toLowerCase().replace(/\s+/g, '-');
+            // Inject models into the universally recognized 'custom' endpoint 
+            // so the frontend UI actually renders them in the dropdown!
+            const endpoint = 'custom';
             if (!modelConfig[endpoint]) {
               modelConfig[endpoint] = [];
             }
