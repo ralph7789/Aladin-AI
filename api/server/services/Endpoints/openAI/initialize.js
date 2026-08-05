@@ -71,7 +71,7 @@ const initializeClient = async ({
           .from('admin_api_keys')
           .select('*')
           .eq('is_active', true)
-          .contains('models', [modelName]);
+          .contains('models', JSON.stringify([modelName]));
           
         if (keys && keys.length > 0) {
           const adminKey = keys[0];
