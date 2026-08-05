@@ -757,7 +757,7 @@ class OpenAIClient extends BaseClient {
     };
   }
 
-  async chatCompletion({ payload, onProgress, abortController = null }) {
+  async chatCompletion({ payload, onProgress, abortController = null }, _isRetry = false) {
     const appConfig = this.options.req?.config;
     let error = null;
     let intermediateReply = [];
@@ -1162,6 +1162,15 @@ class OpenAIClient extends BaseClient {
 
       return message.content;
     } catch (err) {
+      if (!_isRetry && this.options.reverseProxyUrl) {
+        logger.warn(`[OpenAIClient] Proxy failed, falling back to direct provider: ${err?.message}`);
+        this.options.reverseProxyUrl = null;
+        this.options.proxy = null;
+        this.langchainProxy = null;
+        this.completionsUrl = this.isChatCompletion ? 'https://api.openai.com/v1/chat/completions' : 'https://api.openai.com/v1/completions';
+        return await this.chatCompletion({ payload, onProgress, abortController }, true);
+      }
+
       if (
         err?.message?.includes('abort') ||
         (err instanceof OpenAI.APIError && err?.message?.includes('abort'))

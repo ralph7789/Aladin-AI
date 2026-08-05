@@ -48,10 +48,14 @@ router.post('/users', checkAdmin, async (req, res) => {
       return res.status(409).json({ message: 'User already exists' });
     }
 
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = await User.create({
       username,
       email,
-      password, // Pre-save hook hashes this usually, or we use bcrypt here if not
+      password: hashedPassword,
       role: role || 'USER',
       license,
       emailVerified: true,
@@ -215,30 +219,60 @@ router.delete('/roles/:id', checkAdmin, async (req, res) => {
   }
 });
 const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
+const { CacheKeys } = require('aladin-data-provider');
+const { getLogStores } = require('../../cache');
 
-// ... existing code in admin.js ...
-
-// --- MODEL MANAGEMENT (LITELLM PROXY) ---
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const WebSocket = require('ws');
+// Initialize Supabase only if URL and key are provided
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false },
+  realtime: { transport: WebSocket }
+}) : null;
 
 // Helper to get LiteLLM host and key
 const getLiteLLMConfig = () => {
   const host = process.env.LITELLM_HOST || 'http://localhost:4000';
   const key = process.env.LITELLM_MASTER_KEY;
-  if (!key) throw new Error('LITELLM_MASTER_KEY is not defined in environment');
   return { host, key };
 };
+
+// Validate an API Key and fetch available models
+router.post('/model-management/validate', checkAdmin, async (req, res) => {
+  try {
+    const { key, baseURL } = req.body;
+    if (!key || !baseURL) {
+      return res.status(400).json({ message: 'Key and baseURL are required' });
+    }
+    
+    // Call the provider's /models endpoint to validate and fetch available models
+    const axios = require('axios');
+    const response = await axios.get(`${baseURL.replace(/\/$/, '')}/models`, {
+      headers: { Authorization: `Bearer ${key}` }
+    });
+    
+    const models = response.data.data.map(m => m.id);
+    res.json({ message: 'Valid API Key', models });
+  } catch (error) {
+    console.error('[AdminAPI] Validation Error:', error.response?.data || error.message);
+    res.status(400).json({ message: 'Failed to validate API Key or fetch models', error: error.message });
+  }
+});
 
 // Get all providers and keys from LiteLLM
 router.get('/model-management/providers', checkAdmin, async (req, res) => {
   try {
     const { host, key } = getLiteLLMConfig();
-    
-    // Call LiteLLM API to get all keys (we will group them by team_id which acts as provider name)
-    const response = await axios.get(`${host}/key/info`, { 
-      headers: { 'Authorization': `Bearer ${key}` } 
-    });
-    
-    const keys = response.data?.keys || [];
+    let keys = [];
+    if (key) {
+      const response = await axios.get(`${host}/key/info`, { 
+        headers: { 'Authorization': `Bearer ${key}` },
+        timeout: 3000 
+      });
+      keys = response.data?.keys || [];
+    }
     
     // Group keys by team_id (which we use as provider name)
     const providersMap = {};
@@ -275,30 +309,157 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
     res.json(Object.values(providersMap));
   } catch (error) {
     console.error('[AdminAPI] LiteLLM Error:', error.response?.data || error.message);
-    res.status(503).json({ message: 'LiteLLM not connected or error fetching keys', error: error.message });
+    
+    try {
+      if (!supabase) throw new Error('Supabase client not initialized');
+      // Fetch from Supabase as fallback
+      const { data: fallbackKeys, error: dbError } = await supabase
+        .from('admin_api_keys')
+        .select('*');
+        
+      if (dbError) throw dbError;
+      
+      const providersMap = {};
+      for (const k of (fallbackKeys || [])) {
+        const providerName = k.provider || 'Fallback Provider';
+        if (!providersMap[providerName]) {
+          providersMap[providerName] = {
+            name: providerName,
+            isActive: k.is_active !== false,
+            aggregateTokensLimit: 0,
+            aggregateTokensUsed: 0,
+            keys: []
+          };
+        }
+        
+        const limitBudget = k.limit_budget || 1000000;
+        providersMap[providerName].aggregateTokensLimit += limitBudget;
+        providersMap[providerName].keys.push({
+          _id: k.id,
+          key_name: k.key_alias || `${providerName}-Fallback-Key`,
+          key: k.key,
+          status: k.is_active ? 'active' : 'exhausted',
+          supportedModels: k.models || ['all'],
+          tokenLimit: limitBudget,
+          tokensUsed: 0
+        });
+      }
+      return res.json(Object.values(providersMap));
+    } catch (fallbackError) {
+      return res.status(503).json({ message: 'LiteLLM not connected and DB fallback failed', error: fallbackError.message });
+    }
   }
 });
 
-// Add a new API Key to LiteLLM
+// Add a new API Key to LiteLLM and Supabase
 router.post('/model-management/keys', checkAdmin, async (req, res) => {
   try {
-    const { provider, key, models, limit } = req.body;
-    const { host, key: masterKey } = getLiteLLMConfig();
+    const { provider, key, limit, baseURL = '' } = req.body;
+    const { encrypt } = require('@aladin/api');
     
-    // Generate key in LiteLLM (LiteLLM uses the key parameter as aliases in some versions, or we just generate a new one)
-    const response = await axios.post(`${host}/key/generate`, { 
-      models: models, 
-      max_budget: limit, 
-      team_id: provider,
-      aliases: { "key_value": key } // LiteLLM doesn't easily let you BYOK without special config, we store it in aliases/metadata if needed, or pass it if BYOK is supported.
-    }, { 
-      headers: { 'Authorization': `Bearer ${masterKey}` } 
-    });
+    // 1. Auto-fetch models from provider
+    let fetchedModels = [];
+    try {
+      const modelsResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/v1/models`, {
+        headers: { Authorization: `Bearer ${key}` },
+        timeout: 5000
+      });
+      fetchedModels = modelsResponse.data?.data?.map(m => m.id) || [];
+    } catch (fetchError) {
+      console.warn('[AdminAPI] Could not auto-fetch models with /v1/models. Attempting /models fallback...');
+      try {
+        const fallbackResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/models`, {
+          headers: { Authorization: `Bearer ${key}` },
+          timeout: 5000
+        });
+        fetchedModels = fallbackResponse.data?.data?.map(m => m.id) || [];
+      } catch (fallbackErr) {
+        console.error('[AdminAPI] Auto-fetch models failed:', fallbackErr.message);
+      }
+    }
+    
+    // If we have models, use them, otherwise use body.models or empty
+    const finalModels = fetchedModels.length > 0 ? fetchedModels : (req.body.models || []);
 
-    res.status(201).json({ message: 'Key added successfully', data: response.data });
+    const encryptedKey = await encrypt(key);
+    
+    // 2. Save to Supabase admin_api_keys
+    if (supabase) {
+      const { error: insertError } = await supabase
+        .from('admin_api_keys')
+        .upsert({ 
+          provider, 
+          key_alias: `${provider}-Key`,
+          key: encryptedKey, 
+          models: finalModels, 
+          limit_budget: limit, 
+          base_url: baseURL 
+        }, { onConflict: 'provider,key' });
+        
+      if (insertError) {
+        console.error('[AdminAPI] Supabase Insert Error:', insertError);
+      }
+    }
+
+    // 3. Cache Invalidation
+    try {
+      const cache = getLogStores(CacheKeys.CONFIG_STORE);
+      await cache.delete(CacheKeys.MODELS_CONFIG);
+    } catch (cacheError) {
+      console.error('[AdminAPI] Error invalidating MODELS_CONFIG cache:', cacheError);
+    }
+    
+    // 4. Try LiteLLM
+    let liteLLMData = null;
+    try {
+      const { host, key: masterKey } = getLiteLLMConfig();
+      if (masterKey) {
+        const response = await axios.post(`${host}/key/generate`, { 
+          models: finalModels, 
+          max_budget: limit, 
+          team_id: provider,
+          aliases: { "key_value": key }
+        }, { 
+          headers: { 'Authorization': `Bearer ${masterKey}` },
+          timeout: 3000 
+        });
+        liteLLMData = response.data;
+      }
+    } catch (liteError) {
+      console.warn('[AdminAPI] LiteLLM Error adding key:', liteError.message);
+    }
+
+    res.status(201).json({ 
+      message: 'Key added successfully and models auto-fetched', 
+      models: finalModels,
+      data: liteLLMData 
+    });
   } catch (error) {
-    console.error('[AdminAPI] LiteLLM Error adding key:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Error adding key to LiteLLM', error: error.message });
+    console.error('[AdminAPI] Error adding admin key:', error);
+    res.status(500).json({ message: 'Error adding key', error: error.message });
+  }
+});
+
+// Toggle fallback status for an Admin Key
+router.post('/model-management/keys/fallback', checkAdmin, async (req, res) => {
+  try {
+    const { provider, isFallback } = req.body;
+    const AdminKey = mongoose.models.AdminKey || require('../../models/AdminKey').AdminKey;
+    
+    const key = await AdminKey.findOneAndUpdate(
+      { provider },
+      { isFallback },
+      { new: true }
+    );
+    
+    if (!key) {
+      return res.status(404).json({ message: 'Key not found in MongoDB' });
+    }
+    
+    res.status(200).json({ message: 'Fallback status updated', data: key });
+  } catch (error) {
+    console.error('[AdminAPI] Error toggling fallback:', error);
+    res.status(500).json({ message: 'Error updating fallback status', error: error.message });
   }
 });
 

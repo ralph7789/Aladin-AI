@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
@@ -27,9 +27,10 @@ export default function UserForm({
   useEffect(() => {
     if (isOpen) {
       // Load licenses
-      axios.get('/api/admin/licenses').then(res => setLicenses(res.data)).catch(console.error);
+      request.get('/api/admin/licenses').then((data: any) => setLicenses(data)).catch(console.error);
+      
       // Load roles
-      axios.get('/api/admin/roles').then(res => setRoles(res.data)).catch(console.error);
+      request.get('/api/admin/roles').then((data: any) => setRoles(data)).catch(console.error);
       
       if (user) {
         setFormData({
@@ -55,9 +56,9 @@ export default function UserForm({
     e.preventDefault();
     try {
       if (user) {
-        await axios.put(`/api/admin/users/${user._id}`, formData);
+        await request.put(`/api/admin/users/${user._id}`, formData);
       } else {
-        await axios.post('/api/admin/users', formData);
+        await request.post('/api/admin/users', formData);
       }
       onSave();
       onClose();

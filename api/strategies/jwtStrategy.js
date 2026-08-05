@@ -3,11 +3,25 @@ const { SystemRoles } = require('aladin-data-provider');
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const { getUserById, updateUser } = require('~/models');
 
+const cookie = require('cookie');
+
+const cookieExtractor = (req) => {
+  let token = null;
+  if (req && req.headers && req.headers.cookie) {
+    const parsedCookies = cookie.parse(req.headers.cookie);
+    token = parsedCookies.token;
+  }
+  return token;
+};
+
 // JWT strategy
 const jwtLogin = () =>
   new JwtStrategy(
     {
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        cookieExtractor,
+      ]),
       secretOrKey: process.env.JWT_SECRET,
     },
     async (payload, done) => {

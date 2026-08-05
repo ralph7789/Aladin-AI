@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import UserForm from './UserForm';
 
 export default function UsersPage() {
@@ -14,8 +14,8 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('/api/admin/users');
-      setUsers(res.data);
+      const data: any = await request.get('/api/admin/users');
+      setUsers(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -36,7 +36,7 @@ export default function UsersPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
-      await axios.delete(`/api/admin/users/${id}`);
+      await request.delete(`/api/admin/users/${id}`);
       fetchUsers();
     } catch (err) {
       alert('Error deleting user');

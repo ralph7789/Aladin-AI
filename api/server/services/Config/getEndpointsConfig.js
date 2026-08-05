@@ -97,6 +97,31 @@ async function getEndpointsConfig(req) {
     };
   }
 
+  // --- Inject Custom Endpoints from Supabase Admin API Keys ---
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+    
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+      const { data: keys } = await supabase.from('admin_api_keys').select('*').eq('is_active', true);
+      
+      if (keys && keys.length > 0) {
+        if (!mergedConfig[EModelEndpoint.openAI]) {
+          mergedConfig[EModelEndpoint.openAI] = {
+            type: 'openAI',
+            userProvide: false,
+            modelDisplayLabel: 'OpenAI (Admin)',
+            order: 0,
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error injecting custom endpoint for Supabase Admin keys:', err);
+  }
+
   const endpointsConfig = orderEndpointsConfig(mergedConfig);
 
   await cache.set(CacheKeys.ENDPOINT_CONFIG, endpointsConfig);

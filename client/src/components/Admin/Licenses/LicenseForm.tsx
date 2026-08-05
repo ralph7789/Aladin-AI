@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
@@ -23,6 +23,29 @@ export default function LicenseForm({
     models: '',
     features: ''
   });
+  
+  const [availableModels, setAvailableModels] = useState<string[]>(['*']);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const data: any = await request.get('/api/admin/model-management/providers');
+        const models = new Set<string>();
+        models.add('*');
+        data.forEach((provider: any) => {
+          provider.keys.forEach((key: any) => {
+            key.supportedModels.forEach((m: string) => models.add(m));
+          });
+        });
+        setAvailableModels(Array.from(models));
+      } catch (err) {
+        console.error('Error fetching models for license form', err);
+      }
+    };
+    if (isOpen) {
+      fetchModels();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -56,9 +79,9 @@ export default function LicenseForm({
       };
 
       if (license) {
-        await axios.put(`/api/admin/licenses/${license._id}`, payload);
+        await request.put(`/api/admin/licenses/${license._id}`, payload);
       } else {
-        await axios.post('/api/admin/licenses', payload);
+        await request.post('/api/admin/licenses', payload);
       }
       onSave();
       onClose();
@@ -128,7 +151,7 @@ export default function LicenseForm({
             <div className="p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
               <label className="block text-sm font-medium mb-2">Models</label>
               <div className="flex flex-wrap gap-2 mb-3">
-                {COMMON_MODELS.map(model => (
+                {availableModels.map(model => (
                   <label key={model} className="flex items-center gap-2 text-sm bg-white dark:bg-gray-700 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors">
                     <input
                       type="checkbox"

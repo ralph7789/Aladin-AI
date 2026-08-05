@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { request } from 'aladin-data-provider';
 import LicenseForm from './LicenseForm';
 
 export default function LicensesPage() {
@@ -14,8 +14,8 @@ export default function LicensesPage() {
 
   const fetchLicenses = async () => {
     try {
-      const res = await axios.get('/api/admin/licenses');
-      setLicenses(res.data);
+      const data: any = await request.get('/api/admin/licenses');
+      setLicenses(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -36,7 +36,7 @@ export default function LicensesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this license?')) return;
     try {
-      await axios.delete(`/api/admin/licenses/${id}`);
+      await request.delete(`/api/admin/licenses/${id}`);
       fetchLicenses();
     } catch (err) {
       alert('Error deleting license');
