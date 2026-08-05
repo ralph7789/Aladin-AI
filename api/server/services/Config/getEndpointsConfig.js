@@ -109,7 +109,8 @@ async function getEndpointsConfig(req) {
         auth: { persistSession: false },
         realtime: { transport: WebSocket }
       });
-      const { data: keys } = await supabase.from('admin_api_keys').select('*').eq('is_active', true);
+      const { data: keys, error } = await supabase.from('admin_api_keys').select('*').eq('is_active', true);
+      console.log('[DEBUG] getEndpointsConfig supabase keys:', keys, error);
       
       if (keys && keys.length > 0) {
         if (!mergedConfig[EModelEndpoint.openAI]) {
