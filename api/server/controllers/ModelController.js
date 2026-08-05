@@ -57,6 +57,14 @@ async function loadModels(req) {
             // Inject models into the universally recognized 'openAI' endpoint 
             // because 'custom' is overridden by aladin.yaml's array config and won't show up.
             const endpoint = 'openAI';
+            if (!modelConfig[endpoint] || Object.keys(modelConfig).length > 0) {
+              // Clear defaults so ONLY admin keys show up for this endpoint
+              // (Only clear it the first time we find models)
+              if (!modelConfig._clearedOpenAI) {
+                modelConfig[endpoint] = [];
+                modelConfig._clearedOpenAI = true;
+              }
+            }
             if (!modelConfig[endpoint]) {
               modelConfig[endpoint] = [];
             }
@@ -73,6 +81,7 @@ async function loadModels(req) {
     logger.error('Error injecting Supabase Admin_API_Keys models:', err);
   }
 
+  delete modelConfig._clearedOpenAI;
   await cache.set(CacheKeys.MODELS_CONFIG, modelConfig);
   return modelConfig;
 }

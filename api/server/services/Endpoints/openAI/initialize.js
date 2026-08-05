@@ -54,6 +54,37 @@ const initializeClient = async ({
   let apiKey = userProvidesKey ? userValues?.apiKey : credentials[endpoint];
   let baseURL = userProvidesURL ? userValues?.baseURL : baseURLOptions[endpoint];
 
+  if (!isAzureOpenAI && modelName) {
+    try {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabaseUrl = process.env.SUPABASE_URL || '';
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+      
+      if (supabaseUrl && supabaseKey) {
+        const WebSocket = require('ws');
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false },
+          realtime: { transport: WebSocket }
+        });
+        
+        const { data: keys, error } = await supabase
+          .from('admin_api_keys')
+          .select('*')
+          .eq('is_active', true)
+          .contains('models', [modelName]);
+          
+        if (keys && keys.length > 0) {
+          const adminKey = keys[0];
+          if (adminKey.key) apiKey = adminKey.key;
+          if (adminKey.base_url) baseURL = adminKey.base_url;
+        }
+      }
+    } catch (err) {
+      // logger.error('Error fetching admin key from Supabase for chat:', err);
+      console.error('Error fetching admin key from Supabase for chat:', err);
+    }
+  }
+
   let clientOptions = {
     contextStrategy,
     proxy: PROXY ?? null,
