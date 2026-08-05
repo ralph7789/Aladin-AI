@@ -104,7 +104,11 @@ async function getEndpointsConfig(req) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
     
     if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+      const WebSocket = require('ws');
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        realtime: { transport: WebSocket }
+      });
       const { data: keys } = await supabase.from('admin_api_keys').select('*').eq('is_active', true);
       
       if (keys && keys.length > 0) {
