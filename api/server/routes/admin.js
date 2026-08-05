@@ -405,8 +405,9 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
     try {
       const cache = getLogStores(CacheKeys.CONFIG_STORE);
       await cache.delete(CacheKeys.MODELS_CONFIG);
+      await cache.delete(CacheKeys.ENDPOINT_CONFIG);
     } catch (cacheError) {
-      console.error('[AdminAPI] Error invalidating MODELS_CONFIG cache:', cacheError);
+      console.error('[AdminAPI] Error invalidating caches:', cacheError);
     }
     
     // 4. Try LiteLLM
