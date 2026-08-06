@@ -49,23 +49,37 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
   let apiKey = userProvidesKey ? userValues?.apiKey : CUSTOM_API_KEY;
   let baseURL = userProvidesURL ? userValues?.baseURL : CUSTOM_BASE_URL;
 
-  // --- Admin Fallback Logic ---
+  // --- Admin Fallback Logic (Supabase Postgres) ---
   try {
-    const mongoose = require('mongoose');
-    const AdminKey = mongoose.models.AdminKey || require('~/models/AdminKey').AdminKey;
     const { decrypt } = require('@aladin/api');
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseUrl = process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
     
-    const requestedModel = endpointOption?.modelOptions?.model || req.body.model;
-    const fallbackKeys = await AdminKey.find({ isActive: true }).lean();
-    
-    const fallbackKey = fallbackKeys.find(k => !k.models || k.models.length === 0 || k.models.includes(requestedModel));
-    
-    if (fallbackKey && (!fallbackKey.models || fallbackKey.models.length === 0 || fallbackKey.models.includes(requestedModel))) {
-      apiKey = await decrypt(fallbackKey.key);
-      if (fallbackKey.baseURL) {
-         baseURL = fallbackKey.baseURL;
+    if (supabaseUrl && supabaseKey) {
+      const WebSocket = require('ws');
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false },
+        realtime: { transport: WebSocket }
+      });
+      
+      const requestedModel = endpointOption?.modelOptions?.model || req.body.model;
+      const { data: keys, error } = await supabase
+        .from('admin_api_keys')
+        .select('*')
+        .eq('is_active', true);
+        
+      if (keys && keys.length > 0) {
+        // Find the fallback key that matches the requested model, or a generic key
+        const fallbackKey = keys.find(k => !k.models || k.models.length === 0 || k.models.includes(requestedModel));
+        if (fallbackKey) {
+          apiKey = await decrypt(fallbackKey.key);
+          if (fallbackKey.base_url) {
+            baseURL = fallbackKey.base_url;
+          }
+          console.log(`[CustomEndpoint] Bypassing Proxy: Using Supabase Fallback Key for provider ${fallbackKey.provider}`);
+        }
       }
-      console.log(`[CustomEndpoint] Bypassing Proxy: Using MongoDB Fallback Key for provider ${fallbackKey.provider}`);
     }
   } catch (err) {
     console.error('[CustomEndpoint] Error checking AdminKey fallback:', err);

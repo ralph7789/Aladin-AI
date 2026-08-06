@@ -5,6 +5,7 @@ const {
   isUserProvided,
   getOpenAIConfig,
   getAzureCredentials,
+  decrypt,
 } = require('@aladin/api');
 const { getUserKeyValues, checkUserKeyExpiry } = require('~/server/services/UserService');
 const OpenAIClient = require('~/app/clients/OpenAIClient');
@@ -77,7 +78,7 @@ const initializeClient = async ({
           
         if (keys && keys.length > 0) {
           const adminKey = keys[0];
-          if (adminKey.key) apiKey = adminKey.key;
+          if (adminKey.key) apiKey = await decrypt(adminKey.key);
           if (adminKey.base_url) baseURL = adminKey.base_url;
         }
       }

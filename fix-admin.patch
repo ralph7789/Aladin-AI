@@ -1,0 +1,22 @@
+--- api/server/routes/admin.js
++++ api/server/routes/admin.js
+@@ -265,7 +265,8 @@
+     let keys = [];
+     if (key) {
+       const response = await axios.get(`${host}/key/info`, { 
+-        headers: { 'Authorization': `Bearer ${key}` } 
++        headers: { 'Authorization': `Bearer ${key}` },
++        timeout: 3000 
+       });
+       keys = response.data?.keys || [];
+     }
+@@ -413,7 +414,8 @@
+           team_id: provider,
+           aliases: { "key_value": key }
+         }, { 
+-          headers: { 'Authorization': `Bearer ${masterKey}` } 
++          headers: { 'Authorization': `Bearer ${masterKey}` },
++          timeout: 3000 
+         });
+         liteLLMData = response.data;
+       }

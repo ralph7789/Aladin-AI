@@ -1,0 +1,21 @@
+--- api/server/routes/admin.js
++++ api/server/routes/admin.js
+@@ -355,14 +356,16 @@
+     let fetchedModels = [];
+     try {
+       const modelsResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/v1/models`, {
+-        headers: { Authorization: `Bearer ${key}` }
++        headers: { Authorization: `Bearer ${key}` },
++        timeout: 5000
+       });
+       fetchedModels = modelsResponse.data?.data?.map(m => m.id) || [];
+     } catch (fetchError) {
+       console.warn('[AdminAPI] Could not auto-fetch models with /v1/models. Attempting /models fallback...');
+       try {
+         const fallbackResponse = await axios.get(`${baseURL.replace(/\/$/, '')}/models`, {
+-          headers: { Authorization: `Bearer ${key}` }
++          headers: { Authorization: `Bearer ${key}` },
++          timeout: 5000
+         });
+         fetchedModels = fallbackResponse.data?.data?.map(m => m.id) || [];
+       } catch (fallbackErr) {
