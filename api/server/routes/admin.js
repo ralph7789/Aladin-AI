@@ -253,7 +253,8 @@ router.post('/model-management/validate', checkAdmin, async (req, res) => {
       headers: { Authorization: `Bearer ${key}` }
     });
     
-    const models = response.data.data.map(m => m.id);
+    const modelsList = response.data.data || response.data.models || [];
+    const models = modelsList.map(m => m.id);
     res.json({ message: 'Valid API Key', models });
   } catch (error) {
     console.error('[AdminAPI] Validation Error:', error.response?.data || error.message);
@@ -364,7 +365,8 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
         headers: { Authorization: `Bearer ${key}` },
         timeout: 5000
       });
-      fetchedModels = modelsResponse.data?.data?.map(m => m.id) || [];
+      const modelsList = modelsResponse.data?.data || modelsResponse.data?.models || [];
+      fetchedModels = modelsList.map(m => m.id) || [];
     } catch (fetchError) {
       console.warn('[AdminAPI] Could not auto-fetch models with /v1/models. Attempting /models fallback...');
       try {
@@ -372,7 +374,8 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
           headers: { Authorization: `Bearer ${key}` },
           timeout: 5000
         });
-        fetchedModels = fallbackResponse.data?.data?.map(m => m.id) || [];
+        const fallbackList = fallbackResponse.data?.data || fallbackResponse.data?.models || [];
+        fetchedModels = fallbackList.map(m => m.id) || [];
       } catch (fallbackErr) {
         console.error('[AdminAPI] Auto-fetch models failed:', fallbackErr.message);
       }
