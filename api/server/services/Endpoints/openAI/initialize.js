@@ -54,6 +54,8 @@ const initializeClient = async ({
   let apiKey = userProvidesKey ? userValues?.apiKey : credentials[endpoint];
   let baseURL = userProvidesURL ? userValues?.baseURL : baseURLOptions[endpoint];
 
+  const isAzureOpenAI = endpoint === EModelEndpoint.azureOpenAI;
+
   if (!isAzureOpenAI && modelName) {
     try {
       const { createClient } = require('@supabase/supabase-js');
@@ -93,7 +95,6 @@ const initializeClient = async ({
     ...endpointOption,
   };
 
-  const isAzureOpenAI = endpoint === EModelEndpoint.azureOpenAI;
   /** @type {false | TAzureConfig} */
   const azureConfig = isAzureOpenAI && appConfig.endpoints?.[EModelEndpoint.azureOpenAI];
   let serverless = false;
