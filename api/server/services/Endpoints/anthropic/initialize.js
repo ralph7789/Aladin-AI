@@ -9,9 +9,45 @@ const initializeClient = async ({ req, res, endpointOption, overrideModel, optio
   const expiresAt = req.body.key;
   const isUserProvided = ANTHROPIC_API_KEY === 'user_provided';
 
-  const anthropicApiKey = isUserProvided
+  let anthropicApiKey = isUserProvided
     ? await getUserKey({ userId: req.user.id, name: EModelEndpoint.anthropic })
     : ANTHROPIC_API_KEY;
+
+  // --- Admin Fallback Logic (Supabase Postgres) ---
+  const modelName = overrideModel ?? endpointOption?.model_parameters?.model ?? req.body.model;
+  if (modelName) {
+    try {
+      const { decrypt } = require('@aladin/api');
+      const { createClient } = require('@supabase/supabase-js');
+      const supabaseUrl = process.env.SUPABASE_URL || '';
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+      
+      if (supabaseUrl && supabaseKey) {
+        const WebSocket = require('ws');
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false },
+          realtime: { transport: WebSocket }
+        });
+        
+        const { data: keys, error } = await supabase
+          .from('admin_api_keys')
+          .select('*')
+          .eq('is_active', true)
+          .eq('provider', 'Anthropic')
+          .contains('models', JSON.stringify([modelName]));
+          
+        if (keys && keys.length > 0) {
+          const adminKey = keys[0];
+          if (adminKey.key) anthropicApiKey = await decrypt(adminKey.key);
+          console.log(`[AnthropicEndpoint] Using Supabase Fallback Key for ${modelName}`);
+        }
+      }
+    } catch (err) {
+      console.error('[AnthropicEndpoint] Error fetching admin key from Supabase:', err);
+    }
+  }
+  // ----------------------------
+
 
   if (!anthropicApiKey) {
     throw new Error('Anthropic API key not provided. Please provide it again.');

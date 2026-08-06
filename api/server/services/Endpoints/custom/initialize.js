@@ -13,7 +13,7 @@ const getLogStores = require('~/cache/getLogStores');
 
 const { PROXY } = process.env;
 
-const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrideEndpoint }) => {
+const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrideEndpoint, overrideModel }) => {
   const appConfig = req.config;
   const { key: expiresAt } = req.body;
   const endpoint = overrideEndpoint ?? req.body.endpoint;
@@ -63,7 +63,7 @@ const initializeClient = async ({ req, res, endpointOption, optionsOnly, overrid
         realtime: { transport: WebSocket }
       });
       
-      const requestedModel = endpointOption?.modelOptions?.model || req.body.model;
+      const requestedModel = overrideModel || endpointOption?.modelOptions?.model || req.body.model;
       const { data: keys, error } = await supabase
         .from('admin_api_keys')
         .select('*')
