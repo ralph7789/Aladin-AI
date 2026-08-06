@@ -254,7 +254,7 @@ router.post('/model-management/validate', checkAdmin, async (req, res) => {
     });
     
     const modelsList = response.data.data || response.data.models || [];
-    const models = modelsList.map(m => m.id);
+    const models = modelsList.map(m => m.id || m.name).filter(Boolean);
     res.json({ message: 'Valid API Key', models });
   } catch (error) {
     console.error('[AdminAPI] Validation Error:', error.response?.data || error.message);
@@ -366,7 +366,7 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
         timeout: 5000
       });
       const modelsList = modelsResponse.data?.data || modelsResponse.data?.models || [];
-      fetchedModels = modelsList.map(m => m.id) || [];
+      fetchedModels = modelsList.map(m => m.id || m.name).filter(Boolean);
     } catch (fetchError) {
       console.warn('[AdminAPI] Could not auto-fetch models with /v1/models. Attempting /models fallback...');
       try {
@@ -375,7 +375,7 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
           timeout: 5000
         });
         const fallbackList = fallbackResponse.data?.data || fallbackResponse.data?.models || [];
-        fetchedModels = fallbackList.map(m => m.id) || [];
+        fetchedModels = fallbackList.map(m => m.id || m.name).filter(Boolean);
       } catch (fallbackErr) {
         console.error('[AdminAPI] Auto-fetch models failed:', fallbackErr.message);
       }
