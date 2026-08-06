@@ -1162,8 +1162,9 @@ class OpenAIClient extends BaseClient {
 
       return message.content;
     } catch (err) {
-      if (!_isRetry && this.options.reverseProxyUrl) {
-        logger.warn(`[OpenAIClient] Proxy failed, falling back to direct provider: ${err?.message}`);
+      const isNetworkError = err?.status >= 500 || err?.message?.includes('ECONNREFUSED') || err?.message?.includes('fetch failed') || err?.message?.includes('timeout');
+      if (!_isRetry && this.options.reverseProxyUrl && isNetworkError) {
+        logger.warn(`[OpenAIClient] Proxy failed with network error, falling back to direct provider: ${err?.message}`);
         this.options.reverseProxyUrl = null;
         this.options.proxy = null;
         this.langchainProxy = null;
