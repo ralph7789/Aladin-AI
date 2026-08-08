@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Plus, CheckCircle, XCircle, X } from 'lucide-react';
-import request from '~/utils/request';
+import { request } from 'aladin-data-provider';
 
 interface KeyDBModalProps {
   onClose: () => void;
