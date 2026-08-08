@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Server, Key, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Server, Key, AlertCircle, CheckCircle, Clock, Database } from 'lucide-react';
 import { request } from 'aladin-data-provider';
+import AddKeyModal from './AddKeyModal';
+import KeyDBModal from './KeyDBModal';
+
 interface ApiKey {
   _id: string;
   key_name: string;
@@ -23,6 +26,7 @@ export default function ModelManagementPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showKeyDBModal, setShowKeyDBModal] = useState(false);
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
 
   // Form State
@@ -183,13 +187,22 @@ export default function ModelManagementPage() {
             Manage provider API keys, configure auto-rotation, and monitor token usage. Powered by LiteLLM.
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          <Plus size={18} />
-          Add API Key
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowKeyDBModal(true)}
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Database size={18} />
+            KeyDB
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Plus size={18} />
+            Add API Key
+          </button>
+        </div>
       </div>
 
       {/* Provider List */}
@@ -440,6 +453,14 @@ export default function ModelManagementPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {showKeyDBModal && (
+        <KeyDBModal
+          onClose={() => setShowKeyDBModal(false)}
+          onKeyAddedOrInvoked={() => fetchProviders()}
+          onOpenAddModal={() => setShowAddModal(true)}
+        />
       )}
     </div>
   );

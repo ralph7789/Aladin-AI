@@ -444,20 +444,87 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
   }
 });
 
+// Fetch all keys from Supabase KeyDB (including revoked)
+router.get('/model-management/keys/db', checkAdmin, async (req, res) => {
+  try {
+    if (!supabase) return res.json({ keys: [] });
+    
+    const { data, error } = await supabase
+      .from('admin_api_keys')
+      .select('id, provider, key_alias, models, base_url, is_active, created_at')
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    res.json({ keys: data || [] });
+  } catch (error) {
+    console.error('[AdminAPI] Error fetching KeyDB:', error);
+    res.status(500).json({ message: 'Error fetching KeyDB', error: error.message });
+  }
+});
+
+// Re-activate a key from KeyDB
+router.post('/model-management/keys/invoke', checkAdmin, async (req, res) => {
+  try {
+    const { keyId } = req.body;
+    
+    if (supabase) {
+      // Set to active in Supabase
+      await supabase
+        .from('admin_api_keys')
+        .update({ is_active: true })
+        .match({ id: keyId });
+      
+      const { data } = await supabase.from('admin_api_keys').select('*').eq('id', keyId).single();
+      if (data) {
+        const { decrypt } = require('@aladin/api');
+        const rawKey = await decrypt(data.key);
+        
+        try {
+          const { host, key: masterKey } = getLiteLLMConfig();
+          if (masterKey) {
+            await axios.post(`${host}/key/generate`, { 
+              models: data.models || [], 
+              max_budget: data.limit_budget || 1000000, 
+              team_id: data.provider,
+              aliases: { "key_value": rawKey }
+            }, { 
+              headers: { 'Authorization': `Bearer ${masterKey}` },
+              timeout: 3000 
+            });
+          }
+        } catch (liteError) {
+          console.warn('[AdminAPI] LiteLLM Error re-adding key:', liteError.message);
+        }
+      }
+    }
+
+    try {
+      const cache = getLogStores(CacheKeys.CONFIG_STORE);
+      await cache.delete(CacheKeys.MODELS_CONFIG);
+      await cache.delete(CacheKeys.ENDPOINT_CONFIG);
+    } catch (cacheError) {}
+
+    res.json({ message: 'Key invoked successfully' });
+  } catch (error) {
+    console.error('[AdminAPI] Error invoking key:', error);
+    res.status(500).json({ message: 'Error invoking key', error: error.message });
+  }
+});
+
 // Revoke an Admin API Key
 router.post('/model-management/keys/revoke', checkAdmin, async (req, res) => {
   try {
     const { provider, keyId } = req.body;
     
-    // Delete from Supabase
+    // Mark as inactive in Supabase instead of deleting
     if (supabase) {
       const { error } = await supabase
         .from('admin_api_keys')
-        .delete()
+        .update({ is_active: false })
         .match({ id: keyId });
       
       if (error) {
-        console.error('[AdminAPI] Error deleting key from Supabase:', error);
+        console.error('[AdminAPI] Error revoking key in Supabase:', error);
       }
     }
 
