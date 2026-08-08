@@ -444,6 +444,52 @@ router.post('/model-management/keys', checkAdmin, async (req, res) => {
   }
 });
 
+// Revoke an Admin API Key
+router.post('/model-management/keys/revoke', checkAdmin, async (req, res) => {
+  try {
+    const { provider, keyId } = req.body;
+    
+    // Delete from Supabase
+    if (supabase) {
+      const { error } = await supabase
+        .from('admin_api_keys')
+        .delete()
+        .match({ id: keyId });
+      
+      if (error) {
+        console.error('[AdminAPI] Error deleting key from Supabase:', error);
+      }
+    }
+
+    // Try LiteLLM
+    try {
+      const { host, key: masterKey } = getLiteLLMConfig();
+      if (masterKey) {
+        await axios.post(`${host}/key/delete`, { 
+          keys: [keyId]
+        }, { 
+          headers: { 'Authorization': `Bearer ${masterKey}` },
+          timeout: 3000 
+        });
+      }
+    } catch (liteError) {
+      console.warn('[AdminAPI] LiteLLM Error revoking key:', liteError.message);
+    }
+    
+    // Cache Invalidation
+    try {
+      const cache = getLogStores(CacheKeys.CONFIG_STORE);
+      await cache.delete(CacheKeys.MODELS_CONFIG);
+      await cache.delete(CacheKeys.ENDPOINT_CONFIG);
+    } catch (cacheError) {}
+
+    res.json({ message: 'Key revoked successfully' });
+  } catch (error) {
+    console.error('[AdminAPI] Error revoking admin key:', error);
+    res.status(500).json({ message: 'Error revoking key', error: error.message });
+  }
+});
+
 // Toggle fallback status for an Admin Key
 router.post('/model-management/keys/fallback', checkAdmin, async (req, res) => {
   try {

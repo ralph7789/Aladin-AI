@@ -149,6 +149,17 @@ export default function ModelManagementPage() {
     }
   };
 
+  const handleRevoke = async (providerName: string, keyId: string) => {
+    if (!window.confirm(`Are you sure you want to revoke this API key for ${providerName}?`)) return;
+    try {
+      await request.post('/api/admin/model-management/keys/revoke', { provider: providerName, keyId });
+      fetchProviders();
+    } catch (error) {
+      console.error('Failed to revoke key', error);
+      alert('Failed to revoke API key.');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <CheckCircle className="text-green-500" size={16} />;
@@ -272,7 +283,10 @@ export default function ModelManagementPage() {
                           </div>
                           
                           <div>
-                            <button className="text-gray-400 hover:text-red-500 p-2 transition-colors">
+                            <button 
+                              className="text-gray-400 hover:text-red-500 p-2 transition-colors"
+                              onClick={() => handleRevoke(provider.name, key._id)}
+                            >
                               Revoke
                             </button>
                           </div>
