@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Server, Plus, Settings, Key, AlertCircle, CheckCircle, Clock, Database } from 'lucide-react';
 import request from '~/utils/request';
-import AddKeyModal from './AddKeyModal';
 import KeyDBModal from './KeyDBModal';
 
 interface ApiKey {
