@@ -316,7 +316,8 @@ router.get('/model-management/providers', checkAdmin, async (req, res) => {
       // Fetch from Supabase as fallback
       const { data: fallbackKeys, error: dbError } = await supabase
         .from('admin_api_keys')
-        .select('*');
+        .select('*')
+        .eq('is_active', true);
         
       if (dbError) throw dbError;
       
@@ -581,3 +582,27 @@ router.post('/model-management/keys/fallback', checkAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+// Update an existing KeyDB entry (when revoked)
+router.put('/model-management/keys/db/:id', checkAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { models, limit_budget, base_url } = req.body;
+    
+    if (supabase) {
+      const { error, data } = await supabase
+        .from('admin_api_keys')
+        .update({ models, limit_budget, base_url })
+        .match({ id })
+        .select();
+        
+      if (error) throw error;
+      res.json({ message: 'Key updated successfully', data });
+    } else {
+      res.status(503).json({ message: 'Supabase not connected' });
+    }
+  } catch (error) {
+    console.error('[AdminAPI] Error updating key:', error);
+    res.status(500).json({ message: 'Error updating key', error: error.message });
+  }
+});
