@@ -237,12 +237,11 @@ const registerUser = async (user, additionalData = {}) => {
   } catch (err) {
     logger.error('[registerUser] Error in registering user:', err);
     if (newUserId) {
-      const result = await deleteUserById(newUserId);
-      logger.warn(
-        `[registerUser] [Email: ${email}] [Temporary User deleted: ${JSON.stringify(result)}]`,
-      );
+      await deleteUserById(newUserId);
+      await deleteTokens(newUserId);
+      await deleteSession({ user: newUserId });
     }
-    return { status: 500, message: 'Something went wrong' };
+    return { status: 500, message: 'Something went wrong', error: err.message, stack: err.stack };
   }
 };
 
