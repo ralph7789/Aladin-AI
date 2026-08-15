@@ -5,7 +5,7 @@ function validateRegistration(req, res, next) {
     return next();
   }
 
-  if (isEnabled(process.env.ALLOW_REGISTRATION)) {
+  if (process.env.ALLOW_REGISTRATION === undefined || isEnabled(process.env.ALLOW_REGISTRATION)) {
     next();
   } else {
     return res.status(403).json({
