@@ -242,7 +242,7 @@ const registerUser = async (user, additionalData = {}) => {
       await deleteTokens(newUserId);
       await deleteSession({ user: newUserId });
     }
-    return { status: 500, message: 'Something went wrong', error: err.message, stack: err.stack };
+    return { status: 500, message: 'Something went wrong' };
   }
 };
 
