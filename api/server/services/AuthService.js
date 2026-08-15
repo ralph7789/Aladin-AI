@@ -215,6 +215,7 @@ const registerUser = async (user, additionalData = {}) => {
       avatar: null,
       role: isFirstRegisteredUser ? SystemRoles.ADMIN : SystemRoles.USER,
       password: hashedPassword,
+      user_id: require('crypto').randomUUID(),
       ...additionalData,
     };
 
