@@ -68,6 +68,14 @@ const userSchema = new Schema<IUser>(
       required: true,
       default: 'local',
     },
+    role: {
+      type: String,
+      default: SystemRoles.USER,
+    },
+    license: {
+      type: Schema.Types.ObjectId,
+      ref: 'License',
+    },
 
     googleId: {
       type: String,
