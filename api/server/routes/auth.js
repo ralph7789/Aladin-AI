@@ -1,4 +1,7 @@
 const express = require('express');
+const crypto = require('crypto');
+const { CacheKeys } = require('aladin-data-provider');
+const { getLogStores } = require('~/cache');
 const { createSetBalanceConfig } = require('@aladin/api');
 const {
   resetPasswordRequestController,
@@ -81,5 +84,23 @@ router.post('/2fa/disable', middleware.requireJwtAuth, disable2FA);
 router.post('/2fa/backup/regenerate', middleware.requireJwtAuth, regenerateBackupCodes);
 
 router.get('/graph-token', middleware.requireJwtAuth, graphTokenController);
+
+const WINDOW_MS = 5 * 60 * 1000;
+const getChallengeSecret = () => {
+  const timeWindow = Math.floor(Date.now() / WINDOW_MS);
+  const baseSecret = process.env.SENTINEL_GATEWAY_SECRET || 'default-secret';
+  return `${baseSecret}-${timeWindow}`;
+};
+
+router.get('/register-challenge', (req, res) => {
+  const session_id = crypto.randomBytes(32).toString('hex');
+  const secret = getChallengeSecret();
+  const challenge = crypto.createHmac('sha256', secret).update(session_id).digest('hex');
+  
+  const cache = getLogStores(CacheKeys.PENDING_REQ);
+  cache.set(session_id, '1', WINDOW_MS); 
+  
+  res.json({ session_id, challenge });
+});
 
 module.exports = router;
