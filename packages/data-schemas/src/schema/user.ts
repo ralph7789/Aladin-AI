@@ -72,6 +72,10 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: SystemRoles.USER,
     },
+    api_tester: {
+      type: Boolean,
+      default: false,
+    },
     license: {
       type: Schema.Types.ObjectId,
       ref: 'License',

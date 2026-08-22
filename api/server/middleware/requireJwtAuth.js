@@ -17,7 +17,18 @@ const requireJwtAuth = (req, res, next) => {
   }
 
   // Default to standard JWT authentication
-  return passport.authenticate('jwt', { session: false })(req, res, next);
+  return passport.authenticate('jwt', { session: false }, (err, user, info) => {
+    if (err) { return next(err); }
+    if (!user) { return res.status(401).send('Unauthorized'); }
+    
+    const isBrowser = req.headers['sec-fetch-mode'] || req.headers['sec-fetch-site'] || req.headers['origin'];
+    if (!isBrowser && !user.api_tester) {
+        return res.status(403).json({ message: 'Programmatic API access requires the Dev API Tester role.' });
+    }
+    
+    req.user = user;
+    next();
+  })(req, res, next);
 };
 
 module.exports = requireJwtAuth;

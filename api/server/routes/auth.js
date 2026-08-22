@@ -21,6 +21,14 @@ const { getAppConfig } = require('~/server/services/Config');
 const middleware = require('~/server/middleware');
 const { Balance } = require('~/db/models');
 
+const preventProgrammatic = (req, res, next) => {
+  const isBrowser = req.headers['sec-fetch-mode'] || req.headers['sec-fetch-site'] || req.headers['origin'];
+  if (!isBrowser) {
+    return res.status(403).json({ message: 'Direct programmatic registration/login is disabled to prevent bot abuse.' });
+  }
+  next();
+};
+
 const setBalanceConfig = createSetBalanceConfig({
   getAppConfig,
   Balance,
@@ -33,6 +41,7 @@ const ldapAuth = !!process.env.LDAP_URL && !!process.env.LDAP_USER_SEARCH_BASE;
 router.post('/logout', middleware.requireJwtAuth, logoutController);
 router.post(
   '/login',
+  preventProgrammatic,
   middleware.logHeaders,
   middleware.loginLimiter,
   middleware.checkBan,
@@ -43,6 +52,7 @@ router.post(
 router.post('/refresh', refreshController);
 router.post(
   '/register',
+  preventProgrammatic,
   middleware.registerLimiter,
   middleware.checkBan,
   middleware.checkInviteUser,

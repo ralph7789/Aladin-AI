@@ -19,7 +19,8 @@ export default function UserForm({
     email: '',
     password: '',
     role: 'USER',
-    license: ''
+    license: '',
+    api_tester: false
   });
   const [licenses, setLicenses] = useState<any[]>([]);
   const [roles, setRoles] = useState<any[]>([]);
@@ -38,7 +39,8 @@ export default function UserForm({
           email: user.email,
           password: '', // Don't show existing password
           role: user.role,
-          license: user.license || ''
+          license: user.license || '',
+          api_tester: user.api_tester || false
         });
       } else {
         setFormData({
@@ -46,7 +48,8 @@ export default function UserForm({
           email: '',
           password: '',
           role: 'USER',
-          license: ''
+          license: '',
+          api_tester: false
         });
       }
     }
@@ -151,6 +154,19 @@ export default function UserForm({
                   <option key={l._id} value={l._id}>{l.name}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex items-center gap-2 mt-4">
+              <input
+                type="checkbox"
+                id="api_tester"
+                className="w-4 h-4 rounded border-gray-300"
+                checked={formData.api_tester}
+                onChange={e => setFormData({...formData, api_tester: e.target.checked})}
+              />
+              <label htmlFor="api_tester" className="text-sm font-medium dark:text-gray-200">
+                Dev API Tester (Enable Programmatic Access)
+              </label>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
