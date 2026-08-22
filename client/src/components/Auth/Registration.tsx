@@ -126,7 +126,7 @@ const Registration: React.FC = () => {
             method="POST"
             onSubmit={handleSubmit((data: TRegisterUser) => {
               trackEvent('registration_attempt');
-              registerUser.mutate({ ...data, token: token ?? undefined })
+              registerUser.mutate({ ...data, token: token ?? undefined, turnstileToken: turnstileToken ?? undefined })
             })}
           >
             {renderInput('name', 'com_auth_full_name', 'text', {
