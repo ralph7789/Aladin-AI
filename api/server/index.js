@@ -118,8 +118,10 @@ const startServer = async () => {
 
   /* Sentinel Gateway Request Signature Verification */
   app.use((req, res, next) => {
-    const secret = process.env.SENTINEL_GATEWAY_SECRET;
-    if (!secret) {
+    const publicKeyB64 = process.env.SENTINEL_PUBLIC_KEY;
+    const oldSecret = process.env.SENTINEL_GATEWAY_SECRET;
+    
+    if (!publicKeyB64 && !oldSecret) {
       return next();
     }
     
@@ -130,15 +132,29 @@ const startServer = async () => {
       return res.status(403).send('Direct backend access blocked by Sentinel. Timestamp invalid.');
     }
     
-    const computedSignature = crypto.createHmac('sha256', secret)
-      .update(`${timestamp}${req.path}`)
-      .digest('hex');
+    if (publicKeyB64) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const publicKey = Buffer.from(publicKeyB64, 'base64').toString('utf8');
+        const decoded = jwt.verify(signature, publicKey, { algorithms: ['RS256'] });
+        if (decoded.path !== req.path) {
+           return res.status(403).send('Forbidden: Path mismatch');
+        }
+        return next();
+      } catch (err) {
+        return res.status(403).send('Forbidden: Invalid RSA signature');
+      }
+    } else {
+      const computedSignature = crypto.createHmac('sha256', oldSecret)
+        .update(`${timestamp}${req.path}`)
+        .digest('hex');
+        
+      if (computedSignature !== signature) {
+        return res.status(403).send('Forbidden');
+      }
       
-    if (computedSignature !== signature) {
-      return res.status(403).send('Forbidden');
+      next();
     }
-    
-    next();
   });
 
   /* API Endpoints */
