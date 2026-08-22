@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 require('module-alias')({ base: path.resolve(__dirname, '..') });
@@ -114,6 +115,32 @@ const startServer = async () => {
   }
 
   app.use('/oauth', routes.oauth);
+
+  /* Sentinel Gateway Request Signature Verification */
+  app.use((req, res, next) => {
+    const secret = process.env.SENTINEL_GATEWAY_SECRET;
+    if (!secret) {
+      return next();
+    }
+    
+    const timestamp = req.headers['x-sentinel-timestamp'];
+    const signature = req.headers['x-sentinel-signature'];
+    
+    if (!timestamp || isNaN(timestamp) || Math.abs(Date.now() - parseInt(timestamp, 10)) > 30000) {
+      return res.status(403).send('Direct backend access blocked by Sentinel. Timestamp invalid.');
+    }
+    
+    const computedSignature = crypto.createHmac('sha256', secret)
+      .update(`${timestamp}${req.path}`)
+      .digest('hex');
+      
+    if (computedSignature !== signature) {
+      return res.status(403).send('Forbidden');
+    }
+    
+    next();
+  });
+
   /* API Endpoints */
   app.use('/api/auth', routes.auth);
   app.use('/api/actions', routes.actions);
