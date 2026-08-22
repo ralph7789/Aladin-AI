@@ -29,11 +29,19 @@ const Registration: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState<number>(3);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [challengeData, setChallengeData] = useState<{ session_id: string, challenge: string } | null>(null);
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const token = queryParams.get('token');
   const validTheme = isDark(theme) ? 'dark' : 'light';
+
+  React.useEffect(() => {
+    fetch('/api/auth/register-challenge')
+      .then(res => res.json())
+      .then(data => setChallengeData({ session_id: data.session_id, challenge: data.challenge }))
+      .catch(err => console.error('Failed to fetch register challenge', err));
+  }, []);
 
   // only require captcha if we have a siteKey
   const requireCaptcha = Boolean(startupConfig?.turnstile?.siteKey);
@@ -126,7 +134,13 @@ const Registration: React.FC = () => {
             method="POST"
             onSubmit={handleSubmit((data: TRegisterUser) => {
               trackEvent('registration_attempt');
-              registerUser.mutate({ ...data, token: token ?? undefined, turnstileToken: turnstileToken ?? undefined })
+              registerUser.mutate({ 
+                ...data, 
+                token: token ?? undefined, 
+                turnstileToken: turnstileToken ?? undefined,
+                session_id: challengeData?.session_id,
+                challenge: challengeData?.challenge
+              });
             })}
           >
             {renderInput('name', 'com_auth_full_name', 'text', {
