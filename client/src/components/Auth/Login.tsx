@@ -54,10 +54,36 @@ function Login() {
     !isAutoRedirectDisabled;
 
   useEffect(() => {
-    if (shouldAutoRedirect) {
-      console.log('Auto-redirecting to OpenID provider...');
-      window.location.href = `${startupConfig.serverDomain}/oauth/openid`;
+    if (!shouldAutoRedirect) return;
+
+    const url = `${startupConfig.serverDomain}/oauth/openid`;
+    const width = 520;
+    const height = 640;
+    const left = Math.max(0, (window.screen.width - width) / 2);
+    const top = Math.max(0, (window.screen.height - height) / 2);
+
+    const popup = window.open(
+      url,
+      'sentinel_sso_login',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`,
+    );
+
+    if (!popup || popup.closed) {
+      // Popup blocked — fall back to full-page redirect
+      console.warn('Popup blocked, falling back to full-page redirect');
+      window.location.href = url;
+      return;
     }
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.data === 'sentinel_login_success') {
+        popup.close();
+        window.location.reload();
+      }
+    };
+    window.addEventListener('message', onMessage);
+
+    return () => window.removeEventListener('message', onMessage);
   }, [shouldAutoRedirect, startupConfig]);
 
   // Render fallback UI if auto-redirect is active.

@@ -46,12 +46,40 @@ const oauthHandler = async (req, res, next) => {
     } else {
       await setAuthTokens(req.user._id, res);
     }
+
+    // If this is an OpenID callback, it was opened in a popup window.
+    // Send postMessage to parent so it reloads, then close the popup.
+    if (req.user && req.user.provider === 'openid') {
+      const clientOrigin = domains.client || '';
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(`<!DOCTYPE html>
+<html>
+<head><title>Login successful</title></head>
+<body>
+<script>
+  try {
+    if (window.opener) {
+      window.opener.postMessage('sentinel_login_success', ${JSON.stringify(clientOrigin)});
+    } else {
+      window.location.href = ${JSON.stringify(clientOrigin)};
+    }
+  } catch(e) {
+    window.location.href = ${JSON.stringify(clientOrigin)};
+  }
+  window.close();
+</script>
+<p>Login successful. You may close this window.</p>
+</body>
+</html>`);
+    }
+
     res.redirect(domains.client);
   } catch (err) {
     logger.error('Error in setting authentication tokens:', err);
     next(err);
   }
 };
+
 
 router.get('/error', (req, res) => {
   /** A single error message is pushed by passport when authentication fails. */
