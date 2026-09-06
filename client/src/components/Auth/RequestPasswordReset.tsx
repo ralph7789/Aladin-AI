@@ -56,7 +56,7 @@ function RequestPasswordReset() {
           setBodyText(
             <span>
               {localize('com_auth_click')}{' '}
-              <a className="text-green-600 hover:underline dark:text-green-400" href={data.link}>
+              <a className="text-emerald-700 dark:text-emerald-400 hover:underline" href={data.link}>
                 {localize('com_auth_here')}
               </a>{' '}
               {localize('com_auth_to_reset_your_password')}
@@ -90,7 +90,7 @@ function RequestPasswordReset() {
           <input
             type="email"
             id="email"
-            autoComplete="off"
+            autoComplete="email"
             aria-label={localize('com_auth_email')}
             {...register('email', {
               required: localize('com_auth_email_required'),
@@ -108,7 +108,7 @@ function RequestPasswordReset() {
               },
             })}
             aria-invalid={!!errors.email}
-            className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none"
+            className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
             placeholder=" "
           />
           <label

@@ -77,7 +77,7 @@ const Registration: React.FC = () => {
             validation,
           )}
           aria-invalid={!!errors[id]}
-          className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none"
+          className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
           placeholder=" "
           data-testid={id}
         />
@@ -89,7 +89,7 @@ const Registration: React.FC = () => {
         </label>
       </div>
       {errors[id] && (
-        <span role="alert" className="mt-1 text-sm text-red-500">
+        <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
           {String(errors[id]?.message) ?? ''}
         </span>
       )}
