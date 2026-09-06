@@ -27,7 +27,7 @@ services:
       - type: bind
         source: ./.env
         target: /app/.env
-      - ./aladin.yaml:/app/aladin.yaml
+      - ./aladin.yaml:/aladin.yaml
       - ./images:/app/client/public/images
       - ./uploads:/app/uploads
       - ./logs:/app/logs
