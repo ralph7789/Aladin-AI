@@ -60,12 +60,17 @@ function AuthLayout({
     <div className="relative flex min-h-screen flex-col bg-white dark:bg-gray-900">
       <Banner />
       <BlinkAnimation active={isFetching}>
-        <div className="mt-6 h-10 w-full bg-cover">
+        <div className="mt-6 flex flex-col items-center w-full">
           <img
             src="assets/logo.png"
-            className="h-full w-full object-contain"
+            className="h-10 w-full object-contain"
             alt={localize('com_ui_logo', { 0: startupConfig?.appTitle ?? 'Aladin' })}
           />
+          <div className="mt-3 text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase flex items-center justify-center space-x-1" style={{ letterSpacing: '0.15em' }}>
+            <span>Powered by</span>
+            <span className="text-blue-600 dark:text-blue-500">SENTINEL</span>
+            <svg className="w-3 h-3 text-blue-600 dark:text-blue-500 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+          </div>
         </div>
       </BlinkAnimation>
       <DisplayError />
