@@ -387,14 +387,14 @@ const setAuthTokens = async (userId, res, _session = null) => {
     res.cookie('refreshToken', refreshToken, {
       expires: new Date(refreshTokenExpires),
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
     });
     res.cookie('token_provider', 'aladin', {
       expires: new Date(refreshTokenExpires),
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
     });
     return token;
   } catch (error) {
@@ -420,9 +420,22 @@ const setOpenIDAuthTokens = (tokenset, res, userId, existingRefreshToken) => {
       return;
     }
     const { REFRESH_TOKEN_EXPIRY } = process.env ?? {};
-    const expiryInMilliseconds = REFRESH_TOKEN_EXPIRY
-      ? eval(REFRESH_TOKEN_EXPIRY)
-      : 1000 * 60 * 60 * 24 * 7; // 7 days default
+    let expiryInMilliseconds = 1000 * 60 * 60 * 24 * 7; // 7 days default
+    if (REFRESH_TOKEN_EXPIRY) {
+      if (/^\d+$/.test(REFRESH_TOKEN_EXPIRY.trim())) {
+        expiryInMilliseconds = parseInt(REFRESH_TOKEN_EXPIRY.trim(), 10);
+      } else if (/^[\d\s*]+$/.test(REFRESH_TOKEN_EXPIRY)) {
+        expiryInMilliseconds = REFRESH_TOKEN_EXPIRY.split('*').reduce(
+          (acc, cur) => acc * parseInt(cur.trim(), 10),
+          1,
+        );
+      } else {
+        const parsed = parseInt(REFRESH_TOKEN_EXPIRY, 10);
+        if (!isNaN(parsed)) {
+          expiryInMilliseconds = parsed;
+        }
+      }
+    }
     const expirationDate = new Date(Date.now() + expiryInMilliseconds);
     if (tokenset == null) {
       logger.error('[setOpenIDAuthTokens] No tokenset found in request');
@@ -443,20 +456,20 @@ const setOpenIDAuthTokens = (tokenset, res, userId, existingRefreshToken) => {
     res.cookie('refreshToken', refreshToken, {
       expires: expirationDate,
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
     });
     res.cookie('openid_access_token', tokenset.access_token, {
       expires: expirationDate,
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
     });
     res.cookie('token_provider', 'openid', {
       expires: expirationDate,
       httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
+      secure: true,
+      sameSite: 'none',
     });
     if (userId && isEnabled(process.env.OPENID_REUSE_TOKENS)) {
       /** JWT-signed user ID cookie for image path validation when OPENID_REUSE_TOKENS is enabled */
@@ -466,8 +479,8 @@ const setOpenIDAuthTokens = (tokenset, res, userId, existingRefreshToken) => {
       res.cookie('openid_user_id', signedUserId, {
         expires: expirationDate,
         httpOnly: true,
-        secure: isProduction,
-        sameSite: 'strict',
+        secure: true,
+        sameSite: 'none',
       });
     }
     return tokenset.access_token;

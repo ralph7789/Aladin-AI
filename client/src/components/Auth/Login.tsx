@@ -76,6 +76,34 @@ function Login() {
     }
 
     const onMessage = (event: MessageEvent) => {
+      // Validate event origin against trusted domains (RFC / OWASP postMessage security)
+      const allowedOrigins = [
+        startupConfig?.serverDomain,
+        'https://aladin-api-xhoj.onrender.com',
+        'https://client-chi-rouge-51.vercel.app',
+        'https://aladin-sentinel-gateway.onrender.com',
+        'https://aladin-sentinel-dashboard.vercel.app',
+        typeof window !== 'undefined' ? window.location.origin : '',
+      ].filter(Boolean);
+
+      try {
+        const eventOrigin = event.origin ? new URL(event.origin).origin : '';
+        const isAllowed = allowedOrigins.some((allowed) => {
+          try {
+            return allowed && new URL(allowed).origin === eventOrigin;
+          } catch {
+            return allowed === event.origin;
+          }
+        });
+        if (!isAllowed) {
+          console.warn('[Login] Ignored postMessage from untrusted origin:', event.origin);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Login] Error validating postMessage origin:', err);
+        return;
+      }
+
       if (event.data === 'sentinel_login_success') {
         popup.close();
         window.location.reload();

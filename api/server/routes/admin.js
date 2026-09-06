@@ -3,6 +3,7 @@ const router = express.Router();
 const requireJwtAuth = require('../middleware/requireJwtAuth');
 const checkAdmin = require('../middleware/roles/admin');
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 // Use JWT Auth for all routes in this router
 router.use(requireJwtAuth);
@@ -28,7 +29,7 @@ router.get('/users', checkAdmin, async (req, res) => {
     console.error('[AdminAPI] Error fetching users:', error);
     res
       .status(500)
-      .json({ message: 'Error fetching users', error: error.message, stack: error.stack });
+      .json({ message: 'Error fetching users', error: error.message });
   }
 });
 
@@ -48,18 +49,23 @@ router.post('/users', checkAdmin, async (req, res) => {
       return res.status(409).json({ message: 'User already exists' });
     }
 
+    // Hash password with bcrypt before creating user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const newUser = await User.create({
       username,
       email,
-      password, // Pre-save hook hashes this usually, or we use bcrypt here if not
+      password: hashedPassword,
       role: role || 'USER',
       license,
       emailVerified: true,
     });
 
-    // Casbin policy update would happen here (omitted for brevity, handled by hooks usually or service)
+    const userResponse = newUser.toObject ? newUser.toObject() : { ...newUser };
+    delete userResponse.password;
 
-    res.status(201).json(newUser);
+    res.status(201).json(userResponse);
   } catch (error) {
     res.status(500).json({ message: 'Error creating user', error: error.message });
   }
@@ -108,7 +114,7 @@ router.get('/licenses', checkAdmin, async (req, res) => {
     console.error('[AdminAPI] Error fetching licenses:', error);
     res
       .status(500)
-      .json({ message: 'Error fetching licenses', error: error.message, stack: error.stack });
+      .json({ message: 'Error fetching licenses', error: error.message });
   }
 });
 
