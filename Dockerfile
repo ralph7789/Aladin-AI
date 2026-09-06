@@ -48,7 +48,7 @@ RUN \
 # Node API setup
 EXPOSE 3080
 ENV HOST=0.0.0.0
-ENV CONFIG_PATH=/app/aladin.yaml
+ENV CONFIG_PATH=/aladin.yaml
 CMD ["npm", "run", "backend"]
 
 # Optional: for client with nginx routing
