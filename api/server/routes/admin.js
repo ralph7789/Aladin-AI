@@ -170,7 +170,7 @@ router.get('/roles', checkAdmin, async (req, res) => {
 router.post('/roles', checkAdmin, async (req, res) => {
   try {
     const Role = mongoose.models.Role;
-    const { name, permissions } = req.body;
+    const { name, permissions, models } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: 'Role name is required' });
@@ -184,6 +184,7 @@ router.post('/roles', checkAdmin, async (req, res) => {
     const newRole = await Role.create({
       name,
       permissions: permissions || {},
+      models: models || [],
     });
     res.status(201).json(newRole);
   } catch (error) {

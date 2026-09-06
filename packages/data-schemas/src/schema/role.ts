@@ -62,6 +62,10 @@ const roleSchema: Schema<IRole> = new Schema({
   permissions: {
     type: rolePermissionsSchema,
   },
+  models: {
+    type: [String],
+    default: [],
+  },
 });
 
 export default roleSchema;

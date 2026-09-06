@@ -5,6 +5,7 @@ import { CursorPaginationParams } from '~/common';
 
 export interface IRole extends Document {
   name: string;
+  models?: string[];
   permissions: {
     [PermissionTypes.BOOKMARKS]?: {
       [Permissions.USE]?: boolean;

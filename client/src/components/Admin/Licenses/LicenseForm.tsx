@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { useGetModelsQuery } from 'aladin-data-provider/react-query';
 
 export default function LicenseForm({ 
   license, 
@@ -14,6 +15,24 @@ export default function LicenseForm({
   onClose: () => void, 
   onSave: () => void 
 }) {
+  
+  const { data: modelsConfig } = useGetModelsQuery();
+  const availableModels = Object.values(modelsConfig || {}).flat().filter((v, i, a) => a.indexOf(v) === i).sort();
+  const [showModels, setShowModels] = useState(false);
+
+  const toggleModel = (model) => {
+    setFormData(prev => {
+      const currentModels = prev.models === '*' ? [] : prev.models.split(',').map(s => s.trim()).filter(Boolean);
+      let newModels;
+      if (currentModels.includes(model)) {
+        newModels = currentModels.filter(m => m !== model);
+      } else {
+        newModels = [...currentModels, model];
+      }
+      return { ...prev, models: newModels.join(', ') };
+    });
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     maxChats: -1,
@@ -104,14 +123,54 @@ export default function LicenseForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Models (comma separated, * for all)</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-                value={formData.models}
-                onChange={e => setFormData({...formData, models: e.target.value})}
-                placeholder="gpt-4, claude-2, *"
-              />
+              <label className="block text-sm font-medium mb-1 flex justify-between items-center">
+                <span>Models</span>
+                <button 
+                  type="button" 
+                  onClick={() => setShowModels(!showModels)}
+                  className="text-blue-500 hover:text-blue-600 flex items-center text-xs"
+                >
+                  {showModels ? <ChevronUp size={16} /> : <ChevronDown size={16} />} 
+                  {showModels ? 'Hide' : 'Select'}
+                </button>
+              </label>
+              
+              {showModels ? (
+                <div className="border rounded max-h-48 overflow-y-auto p-2 space-y-1 dark:bg-gray-700 dark:border-gray-600">
+                  <div className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded">
+                    <input 
+                      type="checkbox" 
+                      id="model-all"
+                      checked={formData.models === '*'}
+                      onChange={() => setFormData({...formData, models: formData.models === '*' ? '' : '*'})}
+                      className="rounded"
+                    />
+                    <label htmlFor="model-all" className="flex-1 cursor-pointer font-bold text-sm">All Models (*)</label>
+                  </div>
+                  {availableModels.map(model => (
+                    <div key={model} className="flex items-center space-x-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded">
+                      <input 
+                        type="checkbox" 
+                        id={`model-${model}`}
+                        checked={formData.models === '*' || formData.models.split(',').map(s=>s.trim()).includes(model)}
+                        disabled={formData.models === '*'}
+                        onChange={() => toggleModel(model)}
+                        className="rounded"
+                      />
+                      <label htmlFor={`model-${model}`} className="flex-1 cursor-pointer text-sm truncate">{model}</label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 bg-gray-50 text-gray-500 cursor-not-allowed"
+                  value={formData.models}
+                  readOnly
+                  onClick={() => setShowModels(true)}
+                  placeholder="Click to select models..."
+                />
+              )}
             </div>
 
             <div>
