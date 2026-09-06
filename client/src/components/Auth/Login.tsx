@@ -117,7 +117,7 @@ function Login() {
   // Render fallback UI if auto-redirect is active.
   if (shouldAutoRedirect) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="flex flex-col items-center justify-center py-8">
         <p className="text-lg font-semibold">
           {localize('com_ui_redirecting_to_provider', { 0: startupConfig.openidLabel })}
         </p>

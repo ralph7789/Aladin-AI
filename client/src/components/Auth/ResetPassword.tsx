@@ -104,7 +104,7 @@ function ResetPassword() {
         </div>
 
         {errors.password && (
-          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-900">
+          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
             {errors.password.message}
           </span>
         )}
@@ -119,7 +119,7 @@ function ResetPassword() {
               validate: (value) => value === password || localize('com_auth_password_not_match'),
             })}
             aria-invalid={!!errors.confirm_password}
-            className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none"
+            className="webkit-dark-styles transition-color peer w-full rounded-2xl border border-border-light bg-surface-primary px-3.5 pb-2.5 pt-3 text-text-primary duration-200 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500/50"
             placeholder=" "
           />
           <label
@@ -130,17 +130,17 @@ function ResetPassword() {
           </label>
         </div>
         {errors.confirm_password && (
-          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-900">
+          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
             {errors.confirm_password.message}
           </span>
         )}
         {errors.token && (
-          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-900">
+          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
             {errors.token.message}
           </span>
         )}
         {errors.userId && (
-          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-900">
+          <span role="alert" className="mt-1 text-sm text-red-500 dark:text-red-400">
             {errors.userId.message}
           </span>
         )}
