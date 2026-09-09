@@ -4,6 +4,7 @@ import {
   dataService,
   promptPermissionsSchema,
   memoryPermissionsSchema,
+  agentPermissionsSchema,
   marketplacePermissionsSchema,
   peoplePickerPermissionsSchema,
 } from 'aladin-data-provider';
@@ -75,7 +76,7 @@ export const useUpdateAgentPermissionsMutation = (
   const { onMutate, onSuccess, onError } = options ?? {};
   return useMutation(
     (variables) => {
-      promptPermissionsSchema.partial().parse(variables.updates);
+      agentPermissionsSchema.partial().parse(variables.updates);
       return dataService.updateAgentPermissions(variables);
     },
     {
@@ -88,7 +89,7 @@ export const useUpdateAgentPermissionsMutation = (
       onError: (...args) => {
         const error = args[0];
         if (error != null) {
-          console.error('Failed to update prompt permissions:', error);
+          console.error('Failed to update agent permissions:', error);
         }
         if (onError != null) {
           onError(...args);
