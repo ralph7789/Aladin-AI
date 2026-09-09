@@ -31,6 +31,8 @@ module.exports = {
     '^~/(.*)$': '<rootDir>/src/$1',
     '^aladin-data-provider/react-query$':
       '<rootDir>/../node_modules/aladin-data-provider/src/react-query',
+    '^aladin-data-provider$':
+      '<rootDir>/../packages/data-provider/src/index.ts',
   },
   restoreMocks: true,
   testResultsProcessor: 'jest-junit',
