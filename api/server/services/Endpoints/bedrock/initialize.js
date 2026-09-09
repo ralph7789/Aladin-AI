@@ -5,7 +5,7 @@ const { getDefaultHandlers } = require('~/server/controllers/agents/callbacks');
 const getOptions = require('~/server/services/Endpoints/bedrock/options');
 const AgentClient = require('~/server/controllers/agents/client');
 
-const initializeClient = async ({ req, res, endpointOption }) => {
+const initializeClient = async ({ req, res, endpointOption, overrideModel, optionsOnly }) => {
   if (!endpointOption) {
     throw new Error('Endpoint option not provided');
   }
@@ -30,12 +30,16 @@ const initializeClient = async ({ req, res, endpointOption }) => {
     agent.instructions = `${agent.instructions ?? ''}\n${endpointOption.artifactsPrompt}`.trim();
   }
 
-  // TODO: pass-in override settings that are specific to current run
   const options = await getOptions({
     req,
     res,
     endpointOption,
+    overrideModel,
   });
+
+  if (optionsOnly) {
+    return options.llmConfig;
+  }
 
   agent.model_parameters = Object.assign(agent.model_parameters, options.llmConfig);
   if (options.configOptions) {
