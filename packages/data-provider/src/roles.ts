@@ -30,8 +30,10 @@ export enum SystemRoles {
   USER = 'USER',
 }
 
+export const roleNameSchema = z.string().min(1).trim().toUpperCase();
+
 export const roleSchema = z.object({
-  name: z.string(),
+  name: roleNameSchema,
   permissions: permissionsSchema,
 });
 

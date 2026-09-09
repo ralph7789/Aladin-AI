@@ -8,6 +8,7 @@ const {
   memoryPermissionsSchema,
   marketplacePermissionsSchema,
   peoplePickerPermissionsSchema,
+  roleNameSchema,
 } = require('aladin-data-provider');
 const { checkAdmin, requireJwtAuth } = require('~/server/middleware');
 const { updateRoleByName, getRoleByName } = require('~/models/Role');
@@ -57,8 +58,12 @@ const createPermissionUpdateHandler = (permissionKey) => {
 
   return async (req, res) => {
     const { roleName: _r } = req.params;
-    // TODO: TEMP, use a better parsing for roleName
-    const roleName = _r.toUpperCase();
+    let roleName;
+    try {
+      roleName = roleNameSchema.parse(_r);
+    } catch (error) {
+      return res.status(400).send({ message: 'Invalid role name', error: error.errors });
+    }
     const updates = req.body;
 
     try {
@@ -96,8 +101,12 @@ const createPermissionUpdateHandler = (permissionKey) => {
  */
 router.get('/:roleName', async (req, res) => {
   const { roleName: _r } = req.params;
-  // TODO: TEMP, use a better parsing for roleName
-  const roleName = _r.toUpperCase();
+  let roleName;
+  try {
+    roleName = roleNameSchema.parse(_r);
+  } catch (error) {
+    return res.status(400).send({ message: 'Invalid role name', error: error.errors });
+  }
 
   if (
     (req.user.role !== SystemRoles.ADMIN && roleName === SystemRoles.ADMIN) ||
