@@ -297,6 +297,30 @@ async function syncMessages({
       lastMessage.aggregateMessages.push({ id: apiMessage.id });
     } else {
       // Handle new or missing message
+      const file_ids = [];
+      const contentParts = apiMessage.content.reduce((acc, item) => {
+        if (item.type === ContentTypes.IMAGE_FILE) {
+          acc.push({
+            type: ContentTypes.IMAGE_FILE,
+            [ContentTypes.IMAGE_FILE]: { file_id: item[ContentTypes.IMAGE_FILE].file_id },
+          });
+          return acc;
+        }
+
+        if (item.type === ContentTypes.TEXT) {
+          acc.push(item);
+          if (item[ContentTypes.TEXT].annotations && item[ContentTypes.TEXT].annotations.length) {
+            for (const annotation of item[ContentTypes.TEXT].annotations) {
+              if (annotation.file_path) {
+                file_ids.push(annotation.file_path.file_id);
+              }
+            }
+          }
+        }
+
+        return acc;
+      }, []);
+
       const newMessage = {
         thread_id,
         conversationId,
@@ -305,17 +329,28 @@ async function syncMessages({
         parentMessageId: lastMessage ? lastMessage.messageId : Constants.NO_PARENT,
         role: apiMessage.role,
         isCreatedByUser: apiMessage.role === 'user',
-        // TODO: process generated files in content parts
-        content: apiMessage.content,
+        content: contentParts,
         aggregateMessages: [{ id: apiMessage.id }],
         model: apiMessage.role === 'user' ? null : apiMessage.assistant_id,
         user: openai.req.user.id,
         unfinished: false,
       };
 
-      if (apiMessage.file_ids?.length) {
-        // TODO: retrieve file objects from API
-        newMessage.files = apiMessage.file_ids.map((file_id) => ({ file_id }));
+      const fileIdsToRetrieve = [...new Set([...(apiMessage.file_ids || []), ...file_ids])];
+
+      if (fileIdsToRetrieve.length) {
+        const filePromises = fileIdsToRetrieve.map((file_id) =>
+          retrieveAndProcessFile({
+            openai,
+            client: openai,
+            file_id,
+            unknownType: true,
+          }).catch((error) => {
+            console.error(`Failed to retrieve file ${file_id} from API:`, error);
+            return { file_id };
+          }),
+        );
+        newMessage.files = await Promise.all(filePromises);
       }
 
       /* Assign assistant_id if defined */
