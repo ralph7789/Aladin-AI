@@ -7,7 +7,10 @@ const {
   AnnotationTypes,
   defaultOrderQuery,
 } = require('aladin-data-provider');
-const { retrieveAndProcessFile } = require('~/server/services/Files/process');
+const {
+  retrieveAndProcessFile,
+  calculateImageTokenCost,
+} = require('~/server/services/Files/process');
 const { recordMessage, getMessages } = require('~/models/Message');
 const { spendTokens } = require('~/models/spendTokens');
 const { saveConvo } = require('~/models/Conversation');
@@ -138,8 +141,75 @@ async function saveUserMessage(req, params) {
  * @param {string} [params.promptPrefix] - Optional: from preset for `additional_instructions` field.
  * @return {Promise<Run>} A promise that resolves to the created run object.
  */
+
+/**
+ * Calculates the token count for a message's content parts
+ * @param {import('aladin-data-provider').TMessageContentParts[]} content - The message content parts
+ * @returns {Promise<number>} The calculated token count
+ */
+async function countContentTokens(content) {
+  let numTokens = 0;
+  if (!content || !Array.isArray(content)) {
+    return numTokens;
+  }
+
+  for (const item of content) {
+    if (
+      !item ||
+      !item.type ||
+      item.type === ContentTypes.THINK ||
+      item.type === ContentTypes.ERROR
+    ) {
+      continue;
+    }
+
+    if (item.type === ContentTypes.TOOL_CALL && item.tool_call) {
+      const toolName = item.tool_call.name || '';
+      if (toolName) numTokens += await countTokens(toolName);
+
+      const args = item.tool_call.args || '';
+      if (args) numTokens += await countTokens(args);
+
+      const output = item.tool_call.output || '';
+      if (output) numTokens += await countTokens(output);
+      continue;
+    }
+
+    if (item.type === ContentTypes.IMAGE_FILE && item.image_file) {
+      if (item.image_file.width && item.image_file.height) {
+        numTokens += calculateImageTokenCost({
+          width: item.image_file.width,
+          height: item.image_file.height,
+        });
+      } else {
+        // Fallback or skip if no dims
+        numTokens += 85;
+      }
+      continue;
+    }
+
+    const nestedValue = item[item.type];
+    if (!nestedValue) {
+      continue;
+    }
+
+    if (typeof nestedValue === 'string') {
+      numTokens += await countTokens(nestedValue);
+    } else if (typeof nestedValue.value === 'string') {
+      numTokens += await countTokens(nestedValue.value);
+    }
+  }
+
+  return numTokens;
+}
+
 async function saveAssistantMessage(req, params) {
-  // const tokenCount = // TODO: need to count each content part
+  let tokenCount = 0;
+  if (params.content && Array.isArray(params.content)) {
+    tokenCount = await countContentTokens(params.content);
+  } else if (params.text) {
+    tokenCount = await countTokens(params.text);
+  }
 
   const message = await recordMessage({
     user: params.user,
@@ -155,7 +225,7 @@ async function saveAssistantMessage(req, params) {
     isCreatedByUser: false,
     text: params.text,
     unfinished: false,
-    // tokenCount,
+    tokenCount,
     iconURL: params.iconURL,
     spec: params.spec,
   });

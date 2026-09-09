@@ -149,7 +149,15 @@ const processFiles = async (files, fileIds) => {
  * @param {OpenAI | undefined} [params.openai] - If an OpenAI file, the initialized OpenAI client.
  * @param {string | undefined} [params.apiKey] - If a Google file, the Google API key.
  */
-function enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai, apiKey }) {
+function enqueueDeleteOperation({
+  req,
+  file,
+  deleteFile,
+  promises,
+  resolvedFileIds,
+  openai,
+  apiKey,
+}) {
   if (checkOpenAIStorage(file.source)) {
     // Enqueue to leaky bucket
     promises.push(
@@ -210,7 +218,10 @@ const processDeleteRequest = async ({ req, files }) => {
     }
     const { loadAuthValues } = require('~/server/services/Tools/credentials');
     const { AuthKeys } = require('aladin-data-provider');
-    const result = await loadAuthValues({ userId: req.user.id, authFields: [AuthKeys.GOOGLE_API_KEY] });
+    const result = await loadAuthValues({
+      userId: req.user.id,
+      authFields: [AuthKeys.GOOGLE_API_KEY],
+    });
     googleApiKey = result[AuthKeys.GOOGLE_API_KEY];
   };
 
@@ -299,7 +310,15 @@ const processDeleteRequest = async ({ req, files }) => {
     }
 
     deletionMethods[source] = deleteFile;
-    enqueueDeleteOperation({ req, file, deleteFile, promises, resolvedFileIds, openai, apiKey: googleApiKey });
+    enqueueDeleteOperation({
+      req,
+      file,
+      deleteFile,
+      promises,
+      resolvedFileIds,
+      openai,
+      apiKey: googleApiKey,
+    });
   }
 
   if (agentFiles.length > 0) {
@@ -507,9 +526,14 @@ const processFileUpload = async ({ req, res, metadata }) => {
   const isAssistantUpload = isAssistantsEndpoint(metadata.endpoint);
   const assistantSource =
     metadata.endpoint === EModelEndpoint.azureAssistants ? FileSources.azure : FileSources.openai;
-  const isGoogleUpload = metadata.endpoint === EModelEndpoint.google && !file.mimetype.startsWith('image');
+  const isGoogleUpload =
+    metadata.endpoint === EModelEndpoint.google && !file.mimetype.startsWith('image');
   // Use the configured file strategy for regular file uploads (not vectordb)
-  const source = isAssistantUpload ? assistantSource : (isGoogleUpload ? FileSources.google : appConfig.fileStrategy);
+  const source = isAssistantUpload
+    ? assistantSource
+    : isGoogleUpload
+      ? FileSources.google
+      : appConfig.fileStrategy;
   const { handleFileUpload } = getStrategyFunctions(source);
   const { file_id, temp_file_id = null } = metadata;
 
@@ -523,7 +547,10 @@ const processFileUpload = async ({ req, res, metadata }) => {
   if (source === FileSources.google) {
     const { loadAuthValues } = require('~/server/services/Tools/credentials');
     const { AuthKeys } = require('aladin-data-provider');
-    const result = await loadAuthValues({ userId: req.user.id, authFields: [AuthKeys.GOOGLE_API_KEY] });
+    const result = await loadAuthValues({
+      userId: req.user.id,
+      authFields: [AuthKeys.GOOGLE_API_KEY],
+    });
     googleApiKey = result[AuthKeys.GOOGLE_API_KEY];
   }
 
@@ -1152,6 +1179,7 @@ function filterFile({ req, image, isAvatar }) {
 }
 
 module.exports = {
+  calculateImageTokenCost,
   filterFile,
   processFiles,
   processFileURL,
