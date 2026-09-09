@@ -1,4 +1,11 @@
 const express = require('express');
+const { z } = require('zod');
+
+/**
+ * Schema for validating and parsing role names.
+ * Trims whitespace, enforces at least 1 character, and transforms to uppercase.
+ */
+const roleNameSchema = z.string().trim().min(1, 'Role name cannot be empty').toUpperCase();
 const {
   SystemRoles,
   roleDefaults,
@@ -57,8 +64,12 @@ const createPermissionUpdateHandler = (permissionKey) => {
 
   return async (req, res) => {
     const { roleName: _r } = req.params;
-    // TODO: TEMP, use a better parsing for roleName
-    const roleName = _r.toUpperCase();
+    let roleName;
+    try {
+      roleName = roleNameSchema.parse(_r);
+    } catch (error) {
+      return res.status(400).send({ message: 'Invalid role name', error: error.errors });
+    }
     const updates = req.body;
 
     try {
@@ -96,17 +107,15 @@ const createPermissionUpdateHandler = (permissionKey) => {
  */
 router.get('/:roleName', async (req, res) => {
   const { roleName: _r } = req.params;
-  // TODO: TEMP, use a better parsing for roleName
-  const roleName = _r.toUpperCase();
-
-  if (
-    (req.user.role !== SystemRoles.ADMIN && roleName === SystemRoles.ADMIN) ||
-    (req.user.role !== SystemRoles.ADMIN && !roleDefaults[roleName])
-  ) {
-    return res.status(403).send({ message: 'Unauthorized' });
-  }
-
   try {
+    const roleName = roleNameSchema.parse(_r);
+
+    if (
+      (req.user.role !== SystemRoles.ADMIN && roleName === SystemRoles.ADMIN) ||
+      (req.user.role !== SystemRoles.ADMIN && !roleDefaults[roleName])
+    ) {
+      return res.status(403).send({ message: 'Unauthorized' });
+    }
     const role = await getRoleByName(roleName, '-_id -__v');
     if (!role) {
       return res.status(404).send({ message: 'Role not found' });
@@ -114,6 +123,9 @@ router.get('/:roleName', async (req, res) => {
 
     res.status(200).send(role);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({ message: 'Invalid role name', error: error.errors });
+    }
     return res.status(500).send({ message: 'Failed to retrieve role', error: error.message });
   }
 });
@@ -147,5 +159,31 @@ router.put('/:roleName/people-picker', checkAdmin, createPermissionUpdateHandler
  * Update marketplace permissions for a specific role
  */
 router.put('/:roleName/marketplace', checkAdmin, createPermissionUpdateHandler('marketplace'));
+
+
+/**
+ * Retrieve Role based on query/params
+ * @route GET /api/roles
+ * @param {express.Request} req - The Express request object.
+ * @param {express.Response} res - The Express response object.
+ */
+router.get('/', async (req, res) => {
+  try {
+    const name = req.query.name || req.params.name || SystemRoles.USER;
+    const roleName = roleNameSchema.parse(String(name));
+    const role = await getRoleByName(roleName, '-_id -__v');
+
+    if (!role) {
+      return res.status(404).send('Role not found');
+    }
+
+    res.status(200).send(role);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).send({ message: 'Invalid role name', error: error.errors });
+    }
+    return res.status(500).send({ message: 'Failed to retrieve role', error: error.message });
+  }
+});
 
 module.exports = router;
