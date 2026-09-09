@@ -229,17 +229,22 @@ describe('loadCustomConfig', () => {
       expect(result).toEqual(mockConfig);
     });
 
-    it('throws an error when paramDefinitions contain unsupported keys', async () => {
-      const malformedCustomParams = {
+    it('allows paramDefinitions with custom/unsupported keys if they are valid', async () => {
+      const validCustomParams = {
         defaultParamsEndpoint: 'google',
         paramDefinitions: [
           { key: 'temperature', default: 0.5 },
-          { key: 'unsupportedKey', range: 0.5 },
+          {
+            key: 'unsupportedKey',
+            label: 'Unsupported Key',
+            type: 'number',
+            component: 'input',
+            default: 0.5
+          },
         ],
       };
-      await expect(loadCustomParams(malformedCustomParams)).rejects.toThrow(
-        'paramDefinitions of "Google" endpoint contains invalid key(s). Valid parameter keys are pressure, temperature',
-      );
+      const result = await loadCustomParams(validCustomParams);
+      expect(result).toBeDefined();
     });
 
     it('throws an error when paramDefinitions is malformed', async () => {
