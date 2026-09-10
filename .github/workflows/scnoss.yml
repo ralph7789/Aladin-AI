@@ -2,9 +2,9 @@ name: Clean Room Snippet Scanner
 
 on: 
   push:
-    branches: [ "main" ]
+    branches: [ "experimental-features" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "experimental-features" ]
   workflow_dispatch: # <-- This is the manual trigger
 
 jobs:
