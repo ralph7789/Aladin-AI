@@ -1,4 +1,4 @@
-name: Clean Room Snippet Scanner
+name: Clean Room Local Scanner
 
 on: 
   push:
@@ -7,21 +7,29 @@ on:
     branches: [ "experimental-features" ]
   workflow_dispatch: 
 
-# These permissions allow the action to post comments on PRs and upload checks
-permissions:
-  contents: write
-  pull-requests: write
-  checks: write
-  actions: read
-
 jobs:
   audit-codebase:
     runs-on: ubuntu-latest
     steps:
-      # 1. Check out your repository code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Run the SCANOSS snippet scanner
-      - name: Run SCANOSS Code Scan
-        uses: scanoss/gha-code-scan@v1
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ScanCode Toolkit
+        run: pip install scancode-toolkit
+
+      - name: Run Local Offline Scan
+        # This scans for copyrights (-c), licenses (-l), packages (-p), emails (-e), and infos (-i)
+        # It ignores standard dependency folders to speed up the scan
+        run: |
+          scancode -clpei --json-pp clean-room-report.json --ignore "node_modules" --ignore "venv" --ignore ".git" .
+
+      - name: Upload Clean Room Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-snippet-report
+          path: clean-room-report.json
