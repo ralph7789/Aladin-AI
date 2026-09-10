@@ -17,14 +17,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          # Locked to 3.11 to prevent dependency build failures
+          python-version: '3.11' 
 
       - name: Install ScanCode Toolkit
         run: pip install scancode-toolkit
 
       - name: Run Local Offline Scan
-        # This scans for copyrights (-c), licenses (-l), packages (-p), emails (-e), and infos (-i)
-        # It ignores standard dependency folders to speed up the scan
+        # Scans for copyrights, licenses, packages, emails, and info
+        # Ignores dependency and git folders to speed up processing
         run: |
           scancode -clpei --json-pp clean-room-report.json --ignore "node_modules" --ignore "venv" --ignore ".git" .
 
@@ -33,3 +34,4 @@ jobs:
         with:
           name: local-snippet-report
           path: clean-room-report.json
+          
