@@ -5,7 +5,14 @@ on:
     branches: [ "experimental-features" ]
   pull_request:
     branches: [ "experimental-features" ]
-  workflow_dispatch: # <-- This is the manual trigger
+  workflow_dispatch: 
+
+# These permissions allow the action to post comments on PRs and upload checks
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+  actions: read
 
 jobs:
   audit-codebase:
@@ -16,15 +23,5 @@ jobs:
         uses: actions/checkout@v4
 
       # 2. Run the SCANOSS snippet scanner
-      - name: Run SCANOSS Audit
-        uses: scanoss/github-action@v1
-        with:
-          # This generates a detailed JSON report of all findings
-          output: scanoss-report.json 
-
-      # 3. Upload the report so you can download and read it
-      - name: Upload Scan Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snippet-scan-report
-          path: scanoss-report.json
+      - name: Run SCANOSS Code Scan
+        uses: scanoss/gha-code-scan@v1
