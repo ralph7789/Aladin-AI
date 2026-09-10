@@ -1,0 +1,30 @@
+name: Clean Room Snippet Scanner
+
+on: 
+  push:
+    branches: [ "experimental-features" ]
+  pull_request:
+    branches: [ "experimental-features" ]
+  workflow_dispatch: # <-- This is the manual trigger
+
+jobs:
+  audit-codebase:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out your repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Run the SCANOSS snippet scanner
+      - name: Run SCANOSS Audit
+        uses: scanoss/github-action@v1
+        with:
+          # This generates a detailed JSON report of all findings
+          output: scanoss-report.json 
+
+      # 3. Upload the report so you can download and read it
+      - name: Upload Scan Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snippet-scan-report
+          path: scanoss-report.json
