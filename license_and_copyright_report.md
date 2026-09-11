@@ -104,3 +104,18 @@ SOFTWARE.
 | MPL-2.0 AND MIT | 1 |
 | Apache 2.0 License | 1 |
 | PSF-2.0 | 1 |
+
+
+
+## Detailed Line-by-Line Copyright Mentions in Source Files
+Below is a comprehensive list of all mentions of "Copyright" or "(c)" found natively in the repository source code (excluding dependencies in `node_modules` and `venv`):
+
+| File | Line | Content |
+|---|---|---|
+| `./LICENSE` | 3 | `Copyright (c) 2025 Aladin` |
+| `./LICENSE` | 12 | `The above copyright notice and this permission notice shall be included in all` |
+| `./LICENSE` | 18 | `AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER` |
+| `./packages/data-schemas/LICENSE` | 3 | `Copyright (c) 2025 Aladin` |
+| `./packages/data-schemas/LICENSE` | 12 | `The above copyright notice and this permission notice shall be included in all` |
+| `./packages/data-schemas/LICENSE` | 18 | `AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER` |
+| `./README.md` | 55 | `## 🔒 Copyright & Security` |
