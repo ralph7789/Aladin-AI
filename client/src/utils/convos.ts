@@ -1,13 +1,4 @@
-import {
-  format,
-  isToday,
-  subDays,
-  getYear,
-  parseISO,
-  startOfDay,
-  startOfYear,
-  isWithinInterval,
-} from 'date-fns';
+import { isAfter, subDays, getYear, startOfDay, startOfYear } from 'date-fns';
 import { QueryClient } from '@tanstack/react-query';
 import { EModelEndpoint, LocalStorageKeys, QueryKeys } from 'aladin-data-provider';
 import type { TConversation, GroupedConversations } from 'aladin-data-provider';
@@ -31,27 +22,6 @@ export const dateKeys = {
   october: 'com_ui_date_october',
   november: 'com_ui_date_november',
   december: 'com_ui_date_december',
-};
-
-const getGroupName = (date: Date) => {
-  const now = new Date(Date.now());
-  if (isToday(date)) {
-    return dateKeys.today;
-  }
-  if (isWithinInterval(date, { start: startOfDay(subDays(now, 1)), end: now })) {
-    return dateKeys.yesterday;
-  }
-  if (isWithinInterval(date, { start: subDays(now, 7), end: now })) {
-    return dateKeys.previous7Days;
-  }
-  if (isWithinInterval(date, { start: subDays(now, 30), end: now })) {
-    return dateKeys.previous30Days;
-  }
-  if (isWithinInterval(date, { start: startOfYear(now), end: now })) {
-    const month = format(date, 'MMMM').toLowerCase();
-    return dateKeys[month];
-  }
-  return ' ' + getYear(date).toString();
 };
 
 const monthOrderMap = new Map([
@@ -84,7 +54,48 @@ export const groupConversationsByDate = (
   }
   const seenConversationIds = new Set();
   const groups = new Map();
-  const now = new Date(Date.now());
+  const now = new Date();
+
+  // Optimizations
+  const todayStart = startOfDay(now);
+  const yesterdayStart = startOfDay(subDays(now, 1));
+  const sevenDaysAgoStart = startOfDay(subDays(now, 7));
+  const thirtyDaysAgoStart = startOfDay(subDays(now, 30));
+  const thisYearStart = startOfYear(now);
+  const monthNames = [
+    'january',
+    'february',
+    'march',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december',
+  ];
+
+  const getGroupNameOptimized = (date: Date) => {
+    if (!isAfter(todayStart, date)) {
+      return dateKeys.today;
+    }
+    if (!isAfter(yesterdayStart, date)) {
+      return dateKeys.yesterday;
+    }
+    if (!isAfter(sevenDaysAgoStart, date)) {
+      return dateKeys.previous7Days;
+    }
+    if (!isAfter(thirtyDaysAgoStart, date)) {
+      return dateKeys.previous30Days;
+    }
+    if (!isAfter(thisYearStart, date)) {
+      const month = monthNames[date.getMonth()];
+      return dateKeys[month as keyof typeof dateKeys];
+    }
+    return ' ' + getYear(date).toString();
+  };
 
   conversations.forEach((conversation) => {
     if (!conversation || seenConversationIds.has(conversation.conversationId)) {
@@ -94,11 +105,11 @@ export const groupConversationsByDate = (
 
     let date: Date;
     if (conversation.updatedAt) {
-      date = parseISO(conversation.updatedAt);
+      date = new Date(conversation.updatedAt);
     } else {
       date = now;
     }
-    const groupName = getGroupName(date);
+    const groupName = getGroupNameOptimized(date);
     if (!groups.has(groupName)) {
       groups.set(groupName, []);
     }
